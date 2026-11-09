@@ -28,6 +28,13 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
 
+app:
+  bank-seed:
+    seed: 42
+    customers: 1000
+    merchants: 50
+    opening-deposit: 1000.00
+
 ---
 spring:
   config:
@@ -41,3 +48,9 @@ spring:
       ddl-auto: validate
   flyway:
     clean-disabled: false
+
+app:
+  bank-seed:
+    customers: 5
+    merchants: 2
+    opening-deposit: 1000.00

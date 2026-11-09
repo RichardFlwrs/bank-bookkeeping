@@ -74,7 +74,7 @@ com.orquidea.bank
 │   └── api             AuditController
 └── shared
     ├── domain          ApiException
-    └── infrastructure  DevDataSeeder, seed fixtures
+    └── infrastructure  DevDataSeeder, BankDataFixture, BankSeedProperties, seeders
 ```
 
 `PurchaseService` is the only type that walks the whole purchase. It calls `card`, `settlement`, `ledger`, and `audit` in order. Contexts do not reach into each other's tables.
@@ -94,13 +94,15 @@ Names only. Props are a later task. Relationships that the purchase depends on a
 
 An entry is valid only when its debits equal its credits. `LedgerService` rejects anything else. Nothing outside `LedgerService` inserts a `JournalLine`.
 
-Seeded chart:
+Seeded chart (defaults: 1000 customers, 50 merchants):
 
 | Code | Name | Type | Who uses it |
 |------|------|------|-------------|
 | `1000` | Cash | `ASSET` | The bank's cash. Opening deposits debit this. |
-| `2100` | Customer Deposits — Ada Lovelace | `LIABILITY` | The customer's official balance. |
-| `2200` | Merchant Deposits — Café Orquídea | `LIABILITY` | What the bank owes the shop. |
+| `2100` | Customer Deposits — Ada Lovelace | `LIABILITY` | Debugger fixture. First customer. |
+| `3001`–`3999` | Customer Deposits — … | `LIABILITY` | Remaining customer deposits. |
+| `2200` | Merchant Deposits — Café Orquídea | `LIABILITY` | Debugger fixture. First merchant. |
+| `5001`–`5049` | Merchant Deposits — … | `LIABILITY` | Remaining merchant deposits. |
 | `2300` | Settlement Suspense | `LIABILITY` | Holds the purchase amount between posting the customer and paying the merchant. |
 | `4100` | Interchange Income | `INCOME` | The fee the bank keeps. |
 
@@ -108,13 +110,13 @@ Seeded chart:
 
 | Model | Role |
 |-------|------|
-| `Customer` | Ada Lovelace. Owns account `2100` and the seeded card. |
+| `Customer` | A deposit-account holder. First seeded row is Ada Lovelace (`2100`). |
 
 ### merchant
 
 | Model | Role |
 |-------|------|
-| `Merchant` | Café Orquídea. Owns account `2200`. |
+| `Merchant` | A shop that gets paid. First seeded row is Café Orquídea (`2200`). |
 
 ### card
 
@@ -162,7 +164,7 @@ Merchant settlement:
 | `2200` Merchant Deposits — Café Orquídea | | 43.50 |
 | `4100` Interchange Income | | 1.50 |
 
-After both entries, suspense is zero. Ada's posted balance is 955.00. The shop is owed 43.50. The bank has earned 1.50. Cash is still 1,000.00, because both parties bank here: the purchase moved a liability, it did not move cash.
+After both entries, suspense is zero. Ada's posted balance is 955.00. The shop is owed 43.50. The bank has earned 1.50. Cash is unchanged by the purchase, because both parties bank here: the purchase moved a liability, it did not move cash.
 
 Available balance equals posted balance while no hold is open. Between authorize and customer posting, Ada's available balance is posted balance minus the open hold.
 
@@ -170,17 +172,19 @@ Available balance equals posted balance while no hold is open. Between authorize
 
 `DevDataSeeder` runs on startup when the chart is empty, same idea as the RSVP `CommandLineRunner`: if the books already exist, it does nothing. Profile `test` does not run it. Deleting `./var/bank_dev.db` and starting again reloads the fixture.
 
+Configured by `app.bank-seed` (defaults: `customers=1000`, `merchants=50`, `opening-deposit=1000.00`, `seed=42`). The test profile uses `customers=5` and `merchants=2`. Ada Lovelace (`2100`, card token `card_ada_orquidea`) and Café Orquídea (`2200`) are always the first rows so the purchase curl below still works.
+
 Every seeder calls `AuditRecorder`. A seed that wrote accounts or journal lines and wrote no audit row is a bug.
 
 | Seeder | What it creates | Audit action |
 |--------|-----------------|--------------|
-| `ChartOfAccountsSeeder` | The five accounts | `SEED_ACCOUNT` per account |
-| `CustomerSeeder` | Ada Lovelace, linked to `2100` | `SEED_CUSTOMER` |
-| `MerchantSeeder` | Café Orquídea, linked to `2200` | `SEED_MERCHANT` |
-| `OpeningDepositSeeder` | The 1,000.00 journal entry | `SEED_DEPOSIT` |
-| `CardSeeder` | Ada's card, token `card_ada_orquidea` | `SEED_CARD` |
+| `ChartOfAccountsSeeder` | Cash, suspense, income, plus one deposit account per customer and merchant | `SEED_ACCOUNT` per account |
+| `CustomerSeeder` | One customer per deposit account (Ada first) | `SEED_CUSTOMER` |
+| `MerchantSeeder` | One merchant per deposit account (Café first) | `SEED_MERCHANT` |
+| `OpeningDepositSeeder` | One `1,000.00` journal entry per customer (debit Cash, credit that deposit) | `SEED_DEPOSIT` |
+| `CardSeeder` | One card per customer (Ada's token `card_ada_orquidea`) | `SEED_CARD` |
 
-`actor` on those rows is the seeder name, for example `seeder:opening-deposit`. `purchase_id` is null. One shared `trace_id` groups the whole seed run.
+`actor` on those rows is the seeder name, for example `seeder:opening-deposit`. `purchase_id` is null. One shared `trace_id` groups the whole seed run. After a full default seed, Cash posted balance is `1,000,000.00`.
 
 Fee rule for the fixture: 1.50 MXN on a purchase of 40.00 or more, otherwise 0.00. The purchase body does not choose the fee.
 
