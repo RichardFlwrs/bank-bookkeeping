@@ -1,0 +1,71 @@
+@startuml card-domain-relations
+title card.domain — model relations
+
+' Names and relations only. Column-level properties are a later task.
+' A solid arrow that leaves this context is an id. Contexts do not share tables.
+' A dashed arrow is a dependency of the purchase walk, not a table this context owns.
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+hide empty members
+
+package card {
+  package domain {
+    enum PurchaseStatus {
+      REQUESTED
+      AUTHORIZED
+      CLEARED
+      SETTLED
+      POSTED
+    }
+
+    class Card
+    class Purchase
+    class AuthorizationHold
+
+    Purchase "*" --> "1" Card : card
+    Purchase "*" --> "1" PurchaseStatus : status
+    Purchase "1" --> "1" AuthorizationHold : hold
+  }
+}
+
+package customer <<external>> {
+  package domain {
+    class Customer
+  }
+}
+
+package ledger <<external>> {
+  package domain {
+    class Account
+    class JournalEntry
+  }
+}
+
+Card "1" --> "1" Customer : holder
+AuthorizationHold ..> Account : available balance\nvia card → customer → deposit account
+Purchase ..> JournalEntry : customer posting\n2100 debit, 2300 credit
+
+note bottom of Card
+  Addressed by its public token, not by a raw number.
+  Fixture token: card_ada_orquidea.
+end note
+
+note bottom of AuthorizationHold
+  A reservation against available balance.
+  Open from AUTHORIZED until the customer is posted,
+  then released in that same transaction.
+  Does not write the journal.
+  Every persisted Purchase has one hold.
+  A decline writes no purchase and no hold.
+end note
+
+note bottom of Purchase
+  The walk. Status is the debugger's progress marker.
+  SETTLED: the customer is posted and the amount sits in suspense.
+  POSTED: the merchant has been paid.
+  ClearingItem and Settlement live in settlement
+  and reference this purchase.
+end note
+
+@enduml

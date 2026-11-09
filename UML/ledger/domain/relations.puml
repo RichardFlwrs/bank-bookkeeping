@@ -1,0 +1,54 @@
+@startuml ledger-domain-relations
+title ledger.domain — model relations
+
+' Names and relations only. Column-level properties are a later task.
+' Contexts do not share tables.
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+hide empty members
+
+package ledger {
+  package domain {
+    enum AccountType {
+      ASSET
+      LIABILITY
+      INCOME
+    }
+
+    class Account
+    class JournalEntry
+    class JournalLine
+
+    Account "*" --> "1" AccountType : type
+    JournalEntry "1" *-- "2..*" JournalLine : lines
+    JournalLine "*" --> "1" Account : account
+  }
+}
+
+note bottom of JournalEntry
+  One balanced posting. The lines commit together.
+  Valid only when debits equal credits.
+  LedgerService rejects anything else.
+  Nothing outside LedgerService inserts a JournalLine.
+end note
+
+note right of Account
+  Seeded chart
+  --
+  1000 Cash — ASSET
+  2100 Customer Deposits — Ada Lovelace — LIABILITY
+  2200 Merchant Deposits — Café Orquídea — LIABILITY
+  2300 Settlement Suspense — LIABILITY
+  4100 Interchange Income — INCOME
+end note
+
+note bottom of JournalLine
+  One side of an entry: a debit or a credit,
+  tied to one Account.
+  A posted balance is the sum of posted lines.
+  JournalLine is not its own aggregate;
+  audit names the JournalEntry.
+end note
+
+@enduml

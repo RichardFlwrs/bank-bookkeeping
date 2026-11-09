@@ -1,0 +1,33 @@
+@startuml card-purchase-status
+title card.domain — PurchaseStatus
+
+' Status order is fixed. SETTLED is the customer posting, not the merchant payment.
+
+skinparam shadowing false
+
+[*] --> REQUESTED : authorize
+
+REQUESTED --> AUTHORIZED : AuthorizationHold opened\njournal unchanged
+AUTHORIZED --> CLEARED : ClearingItem inserted\njournal unchanged
+CLEARED --> SETTLED : post customer\n2100 → 2300\nhold released
+SETTLED --> POSTED : settle merchant\n2300 → 2200 + 4100\nSettlement inserted
+
+POSTED --> [*]
+
+note right of SETTLED
+  The customer is posted.
+  The amount sits in Settlement Suspense.
+end note
+
+note right of POSTED
+  The merchant has been paid
+  and the interchange fee stays with the bank.
+end note
+
+note bottom
+  Unknown card and insufficient available balance
+  write no Purchase, so they never enter this machine.
+  Each arrow is its own transaction.
+end note
+
+@enduml

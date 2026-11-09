@@ -1,0 +1,67 @@
+@startuml audit-domain-relations
+title audit.domain — model relations
+
+' Names and relations only. The audit table columns are already fixed in the README.
+' aggregate_type + aggregate_id name a model. They are not a foreign key.
+' Contexts do not share tables.
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+hide empty members
+
+package audit {
+  package domain {
+    enum AuditAction {
+      SEED_ACCOUNT
+      SEED_CUSTOMER
+      SEED_MERCHANT
+      SEED_DEPOSIT
+      SEED_CARD
+      PURCHASE_AUTHORIZED
+      PURCHASE_CLEARED
+      PURCHASE_CUSTOMER_POSTED
+      PURCHASE_SETTLED
+    }
+
+    class AuditEvent
+
+    AuditEvent "*" --> "1" AuditAction : action
+  }
+}
+
+package aggregates {
+  class Account <<ledger>>
+  class Customer <<customer>>
+  class Merchant <<merchant>>
+  class JournalEntry <<ledger>>
+  class Card <<card>>
+  class Purchase <<card>>
+  class AuthorizationHold <<card>>
+  class ClearingItem <<settlement>>
+  class Settlement <<settlement>>
+}
+
+AuditEvent ..> Account : aggregate
+AuditEvent ..> Customer : aggregate
+AuditEvent ..> Merchant : aggregate
+AuditEvent ..> JournalEntry : aggregate
+AuditEvent ..> Card : aggregate
+AuditEvent ..> Purchase : aggregate\nor purchase_id
+AuditEvent ..> AuthorizationHold : aggregate
+AuditEvent ..> ClearingItem : aggregate
+AuditEvent ..> Settlement : aggregate
+
+note bottom of AuditEvent
+  Append-only. No updates and no deletes.
+  AuditRecorder is the only writer.
+  --
+  aggregate_type + aggregate_id name one of the
+  models above. JournalLine is not named;
+  the entry is.
+  --
+  purchase_id is set for purchase stages
+  and null for seed rows.
+  One trace_id groups a seed run or one purchase.
+end note
+
+@enduml

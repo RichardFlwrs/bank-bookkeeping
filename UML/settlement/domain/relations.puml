@@ -1,0 +1,52 @@
+@startuml settlement-domain-relations
+title settlement.domain — model relations
+
+' Names and relations only. Column-level properties are a later task.
+' A solid arrow that leaves this context is an id. Contexts do not share tables.
+' A dashed arrow is a ledger posting this context depends on.
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+hide empty members
+
+package settlement {
+  package domain {
+    class ClearingItem
+    class Settlement
+  }
+}
+
+package card <<external>> {
+  package domain {
+    class Purchase
+    class AuthorizationHold
+  }
+}
+
+package ledger <<external>> {
+  package domain {
+    class JournalEntry
+  }
+}
+
+Purchase "1" <-- "0..1" ClearingItem : purchase
+AuthorizationHold "1" <-- "0..1" ClearingItem : hold
+Purchase "1" <-- "0..1" Settlement : purchase
+Settlement ..> JournalEntry : merchant settlement\n2300 debit, 2200 and 4100 credit
+
+note bottom of ClearingItem
+  The merchant's confirmation of the authorized amount.
+  Links the hold to the purchase.
+  Present once the purchase is CLEARED.
+  Inserting it does not write the journal.
+end note
+
+note bottom of Settlement
+  The movement from Settlement Suspense (2300)
+  to the merchant deposit (2200) and Interchange Income (4100).
+  Present once the purchase is POSTED.
+  The balanced lines belong to one JournalEntry in ledger.
+  Merchant owns 2200; this model does not own that account.
+end note
+
+@enduml

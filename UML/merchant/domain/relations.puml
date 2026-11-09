@@ -1,0 +1,32 @@
+@startuml merchant-domain-relations
+title merchant.domain — model relations
+
+' Names and relations only. Column-level properties are a later task.
+' A solid arrow that leaves this context is an id. Contexts do not share tables.
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+hide empty members
+
+package merchant {
+  package domain {
+    class Merchant
+  }
+}
+
+package ledger <<external>> {
+  package domain {
+    class Account
+  }
+}
+
+Merchant "0..1" --> "1" Account : deposit account
+
+note bottom of Merchant
+  The shop that gets paid.
+  Fixture: Café Orquídea owns account 2200.
+  Settlement credits that account from suspense.
+  This context does not store purchases or journal lines.
+end note
+
+@enduml

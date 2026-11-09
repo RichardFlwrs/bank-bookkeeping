@@ -1,0 +1,283 @@
+# Bank Bookkeeping
+
+A small Spring Boot backend that behaves like one bank's books. It is complex enough to show a card purchase move through authorization, clearing, settlement, and posting. It is small enough to read in a debugger.
+
+Money enters only through seeders. Each seeder writes the ledger and the audit table. A purchase endpoint then spends some of that money and records every mutation.
+
+This document names the models, the folders, the audit table, and the endpoints. Column-level props of the domain models come later. The audit table is declared here.
+
+## What this simulates
+
+One bank. The customer and the merchant both hold accounts here, so a card purchase never leaves the process. There is no Visa, no second bank, and no network call. The stages still happen in the real order, and each stage commits before the next one starts. A breakpoint between stages sees rows that are already in the database.
+
+A balance is not a column that gets overwritten. It is the sum of journal lines.
+
+- **Posted balance** is the sum of posted journal lines on an account.
+- **Available balance** is the posted balance minus open authorization holds.
+- **Posting** is the moment those journal lines become part of the official balance.
+
+From the bank's point of view a customer deposit is a liability: the bank owes that money to the customer. Adding money with a seeder debits Cash and credits the customer's deposit account. A purchase debits the customer and credits the merchant, and a small interchange fee stays with the bank.
+
+## Stack
+
+Same shape as the Orquídea RSVP API.
+
+- Java 17, Spring Boot 3.5
+- Spring Web, Validation, Data JPA, Flyway
+- SQLite at `./var/bank_dev.db` (one writer is enough for a single debug session)
+- springdoc-openapi at `/swagger-ui.html`
+- No session auth. The API is a local instrument for watching the books.
+
+Package root: `com.orquidea.bank`. `BankApplication` stays at that root for component scanning.
+
+## Package layout (DDD)
+
+Code is organized by bounded context, then by layer (`domain`, `application`, `infrastructure`, `api`). Empty layers are omitted.
+
+| Context | Responsibility | Packages |
+|---------|----------------|----------|
+| `ledger` | Chart of accounts, journal, posted balances | `ledger.domain`, `ledger.application`, `ledger.infrastructure`, `ledger.api` |
+| `customer` | The person who holds a deposit account and a card | `customer.domain`, `customer.infrastructure` |
+| `merchant` | The shop that gets paid | `merchant.domain`, `merchant.infrastructure` |
+| `card` | The card, the hold, and the purchase walk | `card.domain`, `card.application`, `card.infrastructure`, `card.api` |
+| `settlement` | Clearing and the suspense-to-merchant movement | `settlement.domain`, `settlement.application`, `settlement.infrastructure` |
+| `audit` | Append-only record of every mutation, including seeders | `audit.domain`, `audit.application`, `audit.infrastructure`, `audit.api` |
+| `shared` | API errors, the seeder runner | `shared.domain`, `shared.infrastructure` |
+
+```
+com.orquidea.bank
+├── BankApplication
+├── ledger
+│   ├── domain          Account, JournalEntry, JournalLine, AccountType
+│   ├── application     LedgerService, BalanceQuery
+│   ├── infrastructure  AccountRepository, JournalEntryRepository
+│   └── api             LedgerController
+├── customer
+│   ├── domain          Customer
+│   └── infrastructure  CustomerRepository
+├── merchant
+│   ├── domain          Merchant
+│   └── infrastructure  MerchantRepository
+├── card
+│   ├── domain          Card, AuthorizationHold, Purchase, PurchaseStatus
+│   ├── application     PurchaseService
+│   ├── infrastructure  CardRepository, AuthorizationHoldRepository, PurchaseRepository
+│   └── api             PurchaseController
+├── settlement
+│   ├── domain          ClearingItem, Settlement
+│   ├── application     SettlementService
+│   └── infrastructure  ClearingItemRepository, SettlementRepository
+├── audit
+│   ├── domain          AuditEvent, AuditAction
+│   ├── application     AuditRecorder
+│   ├── infrastructure  AuditEventRepository
+│   └── api             AuditController
+└── shared
+    ├── domain          ApiException
+    └── infrastructure  DevDataSeeder, seed fixtures
+```
+
+`PurchaseService` is the only type that walks the whole purchase. It calls `card`, `settlement`, `ledger`, and `audit` in order. Contexts do not reach into each other's tables.
+
+## Models
+
+Names only. Props are a later task. Relationships that the purchase depends on are fixed now.
+
+### ledger
+
+| Model | Role |
+|-------|------|
+| `Account` | One bookkeeping account. Seeded accounts are listed below. |
+| `AccountType` | `ASSET`, `LIABILITY`, `INCOME`. |
+| `JournalEntry` | One balanced posting. The lines inside it commit together. |
+| `JournalLine` | One side of an entry, tied to one `Account`. A debit or a credit. |
+
+An entry is valid only when its debits equal its credits. `LedgerService` rejects anything else. Nothing outside `LedgerService` inserts a `JournalLine`.
+
+Seeded chart:
+
+| Code | Name | Type | Who uses it |
+|------|------|------|-------------|
+| `1000` | Cash | `ASSET` | The bank's cash. Opening deposits debit this. |
+| `2100` | Customer Deposits — Ada Lovelace | `LIABILITY` | The customer's official balance. |
+| `2200` | Merchant Deposits — Café Orquídea | `LIABILITY` | What the bank owes the shop. |
+| `2300` | Settlement Suspense | `LIABILITY` | Holds the purchase amount between posting the customer and paying the merchant. |
+| `4100` | Interchange Income | `INCOME` | The fee the bank keeps. |
+
+### customer
+
+| Model | Role |
+|-------|------|
+| `Customer` | Ada Lovelace. Owns account `2100` and the seeded card. |
+
+### merchant
+
+| Model | Role |
+|-------|------|
+| `Merchant` | Café Orquídea. Owns account `2200`. |
+
+### card
+
+| Model | Role |
+|-------|------|
+| `Card` | Ada's card. The purchase endpoint addresses it by its public token, not by a raw number. |
+| `AuthorizationHold` | A reservation against available balance. Open during the purchase, released when the customer is posted. Does not write the journal. |
+| `Purchase` | The walk itself. Its status is the debugger's progress marker. |
+| `PurchaseStatus` | `REQUESTED`, `AUTHORIZED`, `CLEARED`, `SETTLED`, `POSTED`. |
+
+### settlement
+
+| Model | Role |
+|-------|------|
+| `ClearingItem` | The merchant's confirmation of the authorized amount. Links the hold to the purchase. |
+| `Settlement` | The movement from `2300` out to the merchant and to fee income. |
+
+### audit
+
+Declared in [Audit table](#audit-table). One model: `AuditEvent`.
+
+## How money is recorded
+
+**Opening deposit (seeder), 1,000.00 MXN.** The bank receives cash and now owes Ada that amount.
+
+| Account | Debit | Credit |
+|---------|------:|-------:|
+| `1000` Cash | 1,000.00 | |
+| `2100` Customer Deposits — Ada | | 1,000.00 |
+
+**Purchase, 45.00 MXN, fee 1.50 MXN.** Two entries, so the debugger can see the money sit in suspense.
+
+Customer posting (hold is released in the same transaction):
+
+| Account | Debit | Credit |
+|---------|------:|-------:|
+| `2100` Customer Deposits — Ada | 45.00 | |
+| `2300` Settlement Suspense | | 45.00 |
+
+Merchant settlement:
+
+| Account | Debit | Credit |
+|---------|------:|-------:|
+| `2300` Settlement Suspense | 45.00 | |
+| `2200` Merchant Deposits — Café Orquídea | | 43.50 |
+| `4100` Interchange Income | | 1.50 |
+
+After both entries, suspense is zero. Ada's posted balance is 955.00. The shop is owed 43.50. The bank has earned 1.50. Cash is still 1,000.00, because both parties bank here: the purchase moved a liability, it did not move cash.
+
+Available balance equals posted balance while no hold is open. Between authorize and customer posting, Ada's available balance is posted balance minus the open hold.
+
+## Seeders
+
+`DevDataSeeder` runs on startup when the chart is empty, same idea as the RSVP `CommandLineRunner`: if the books already exist, it does nothing. Profile `test` does not run it. Deleting `./var/bank_dev.db` and starting again reloads the fixture.
+
+Every seeder calls `AuditRecorder`. A seed that wrote accounts or journal lines and wrote no audit row is a bug.
+
+| Seeder | What it creates | Audit action |
+|--------|-----------------|--------------|
+| `ChartOfAccountsSeeder` | The five accounts | `SEED_ACCOUNT` per account |
+| `CustomerSeeder` | Ada Lovelace, linked to `2100` | `SEED_CUSTOMER` |
+| `MerchantSeeder` | Café Orquídea, linked to `2200` | `SEED_MERCHANT` |
+| `OpeningDepositSeeder` | The 1,000.00 journal entry | `SEED_DEPOSIT` |
+| `CardSeeder` | Ada's card, token `card_ada_orquidea` | `SEED_CARD` |
+
+`actor` on those rows is the seeder name, for example `seeder:opening-deposit`. `purchase_id` is null. One shared `trace_id` groups the whole seed run.
+
+Fee rule for the fixture: 1.50 MXN on a purchase of 40.00 or more, otherwise 0.00. The purchase body does not choose the fee.
+
+## Purchase walk
+
+`POST /api/purchases` runs all four stages inside `PurchaseService`. Each stage is its own method and its own transaction, in this order:
+
+1. `authorize` — insert `Purchase` (`REQUESTED`, then `AUTHORIZED`) and an open `AuthorizationHold`. Journal unchanged. Available balance drops.
+2. `clear` — insert `ClearingItem`. Status `CLEARED`. Journal still unchanged.
+3. `postCustomer` — journal entry from `2100` to `2300`, release the hold, status `SETTLED`. Posted balance drops. Suspense holds the amount.
+4. `settleMerchant` — journal entry from `2300` to `2200` and `4100`, insert `Settlement`, status `POSTED`. Suspense returns to zero.
+
+`PurchaseStatus` uses `SETTLED` for "the customer is posted and the amount sits in suspense", then `POSTED` for "the merchant has been paid". The words match the two journal entries above.
+
+Each method calls `AuditRecorder.record(...)` before it returns, with a snapshot of the rows it changed. Because the transaction commits at the end of the method, a breakpoint on the next method sees the previous stage in SQLite, and so does `GET /api/audit?traceId=...`.
+
+The response body is the trail. Clients do not have to query after the fact, and the debugger can still stop on each method.
+
+```json
+{
+  "purchaseId": "pur_...",
+  "traceId": "trc_...",
+  "status": "POSTED",
+  "steps": [
+    { "stage": "authorize", "purchaseStatus": "AUTHORIZED", "available": "955.00", "posted": "1000.00" },
+    { "stage": "clear", "purchaseStatus": "CLEARED", "available": "955.00", "posted": "1000.00" },
+    { "stage": "postCustomer", "purchaseStatus": "SETTLED", "available": "955.00", "posted": "955.00" },
+    { "stage": "settleMerchant", "purchaseStatus": "POSTED", "available": "955.00", "posted": "955.00" }
+  ]
+}
+```
+
+Amounts in that example assume the seeded 1,000.00 and a 45.00 purchase. `available` and `posted` are Ada's deposit account after that stage.
+
+Put breakpoints on the four methods. Step over a stage, then call the read endpoints (or look at SQLite) before continuing.
+
+## Audit table
+
+Append-only. No updates and no deletes, including from seeders. `AuditRecorder` is the only writer.
+
+Table: `audit_event`
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | integer, primary key | |
+| `occurred_at` | text, ISO-8601 UTC | When the mutation committed. |
+| `actor` | text | `seeder:chart-of-accounts`, `seeder:customer`, `seeder:merchant`, `seeder:opening-deposit`, `seeder:card`, or `purchase`. |
+| `action` | text | One `AuditAction`: `SEED_ACCOUNT`, `SEED_CUSTOMER`, `SEED_MERCHANT`, `SEED_DEPOSIT`, `SEED_CARD`, `PURCHASE_AUTHORIZED`, `PURCHASE_CLEARED`, `PURCHASE_CUSTOMER_POSTED`, `PURCHASE_SETTLED`. |
+| `aggregate_type` | text | Model name: `Account`, `Customer`, `Merchant`, `JournalEntry`, `Card`, `Purchase`, `AuthorizationHold`, `ClearingItem`, `Settlement`. |
+| `aggregate_id` | text | Id of that row. |
+| `purchase_id` | text, nullable | Set for purchase stages. Null for seed rows. |
+| `trace_id` | text | Groups one seed run, or one purchase. |
+| `before_json` | text, nullable | Snapshot before the write. Null when the row is being created. |
+| `after_json` | text | Snapshot after the write. |
+
+A purchase of one card produces four purchase audit rows that share a `trace_id`, plus any extra rows when a stage writes more than one aggregate (the journal entry and the hold release are two rows inside `PURCHASE_CUSTOMER_POSTED`'s transaction, same `trace_id`).
+
+## Endpoints
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/api/purchases` | Run authorize, clear, post customer, settle merchant. Body: `{ "cardToken": "card_ada_orquidea", "amount": "45.00" }`. Returns the trail above. |
+| `GET` | `/api/purchases/{purchaseId}` | The purchase, its hold, its clearing item, its settlement. |
+| `GET` | `/api/ledger/accounts` | The five accounts with posted balance and available balance. |
+| `GET` | `/api/ledger/accounts/{code}` | One account, `code` such as `2100`, plus its journal lines. |
+| `GET` | `/api/ledger/journal` | Every journal entry and its lines, oldest first. |
+| `GET` | `/api/audit` | Audit rows. Filters: `traceId`, `purchaseId`, `actor`. |
+
+Declined cases, so the books can be checked when a purchase must not post:
+
+| Case | Result |
+|------|--------|
+| Unknown `cardToken` | `404`, no rows written |
+| Amount above available balance | `422`, purchase stays unwritten, journal untouched |
+| Replay of the same `Idempotency-Key` header | The original trail again, no second hold and no second posting |
+
+## Run
+
+```bash
+./mvnw spring-boot:run
+```
+
+Swagger: `http://localhost:8083/swagger-ui.html`.
+
+After startup, `GET /api/ledger/accounts/2100` shows a posted balance of 1,000.00 and `GET /api/audit?actor=seeder:opening-deposit` shows the seed row. Then:
+
+```bash
+curl -s -X POST http://localhost:8083/api/purchases \
+  -H 'Content-Type: application/json' \
+  -H 'Idempotency-Key: coffee-1' \
+  -d '{"cardToken":"card_ada_orquidea","amount":"45.00"}'
+```
+
+Follow `traceId` with `GET /api/audit?traceId=...` and re-read account `2100`, `2200`, `2300`, and `4100`.
+
+To load the fixture again, stop the app, delete `./var/bank_dev.db`, and start it again.
+
+## Out of scope
+
+Other banks, card networks, cash moving in or out after the seed, interest, loans, chargebacks, end-of-day batch, and authentication. Those belong to a later spec if the walk above is already visible in the debugger.

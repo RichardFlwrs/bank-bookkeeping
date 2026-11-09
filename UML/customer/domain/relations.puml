@@ -1,0 +1,39 @@
+@startuml customer-domain-relations
+title customer.domain — model relations
+
+' Names and relations only. Column-level properties are a later task.
+' A solid arrow that leaves this context is an id. Contexts do not share tables.
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+hide empty members
+
+package customer {
+  package domain {
+    class Customer
+  }
+}
+
+package ledger <<external>> {
+  package domain {
+    class Account
+  }
+}
+
+package card <<external>> {
+  package domain {
+    class Card
+  }
+}
+
+Customer "0..1" --> "1" Account : deposit account
+Card "1" --> "1" Customer : holder
+
+note bottom of Customer
+  The person who holds a deposit account and a card.
+  Fixture: Ada Lovelace owns account 2100.
+  Cash, suspense, and income accounts have no customer.
+  The card row lives in card; this context stores the account reference.
+end note
+
+@enduml

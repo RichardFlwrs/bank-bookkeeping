@@ -1,0 +1,85 @@
+@startuml context-map
+title Model relations across bounded contexts
+
+' Internal structure: UML/<context>/domain/relations.puml
+' Purchase status order: UML/card/domain/purchase-status.puml
+' Audit names every aggregate: UML/audit/domain/relations.puml
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam ranksep 50
+skinparam nodesep 40
+hide empty members
+
+package customer {
+  class Customer
+}
+
+package merchant {
+  class Merchant
+}
+
+package card {
+  class Card
+  class Purchase
+  class AuthorizationHold
+}
+
+package settlement {
+  class ClearingItem
+  class Settlement
+}
+
+package ledger {
+  class Account
+  class JournalEntry
+}
+
+package audit {
+  class AuditEvent
+}
+
+Customer "0..1" --> "1" Account : deposit account
+Merchant "0..1" --> "1" Account : deposit account
+Card "1" --> "1" Customer : holder
+
+Purchase "1" <-- "0..1" ClearingItem : purchase
+AuthorizationHold "1" <-- "0..1" ClearingItem : hold
+Purchase "1" <-- "0..1" Settlement : purchase
+
+AuthorizationHold ..> Account : available balance\n(derived)
+Purchase ..> JournalEntry : customer posting\n2100 → 2300
+Settlement ..> JournalEntry : merchant settlement\n2300 → 2200 + 4100
+
+legend right
+  Solid arrow = the source holds that reference.
+  Crossing a package does not share a table.
+  Dashed arrow = the purchase walk depends on the target.
+  Audit names every aggregate in its own diagram.
+  |= Context |= Owns |
+  | ledger | Account, JournalEntry, JournalLine |
+  | customer | Customer |
+  | merchant | Merchant |
+  | card | Card, Purchase, AuthorizationHold |
+  | settlement | ClearingItem, Settlement |
+  | audit | AuditEvent |
+endlegend
+
+note bottom of AuditEvent
+  Append-only record of every mutation.
+  aggregate_type + aggregate_id name
+  Account, Customer, Merchant, JournalEntry,
+  Card, Purchase, AuthorizationHold,
+  ClearingItem, or Settlement.
+  purchase_id is set for a purchase stage
+  and null for a seed row.
+end note
+
+note as Boundaries
+  PurchaseService is the only type that walks a purchase.
+  It calls card, settlement, ledger, and audit in order.
+  Contexts do not reach into each other's tables.
+  shared has no model relations (API errors and the seeder runner).
+end note
+
+@enduml
