@@ -20,6 +20,8 @@ spring:
       fail-on-unknown-properties: false
     generator:
       write-bigdecimal-as-plain: true
+  thymeleaf:
+    cache: false
 
 
 server:

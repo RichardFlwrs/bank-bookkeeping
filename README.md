@@ -26,6 +26,7 @@ Same shape as the Orquídea RSVP API.
 - Spring Web, Validation, Data JPA, Flyway
 - SQLite at `./var/bank_dev.db` (one writer is enough for a single debug session)
 - springdoc-openapi at `/swagger-ui.html`
+- Thymeleaf page at `/ledger/accounts` for the chart returned by `GET /api/ledger/accounts`
 - No session auth. The API is a local instrument for watching the books.
 
 Package root: `com.orquidea.bank`. `BankApplication` stays at that root for component scanning.
@@ -51,7 +52,7 @@ com.orquidea.bank
 │   ├── domain          Account, JournalEntry, JournalLine, AccountType
 │   ├── application     LedgerService, BalanceQuery
 │   ├── infrastructure  AccountRepository, JournalEntryRepository
-│   └── api             LedgerController
+│   └── api             LedgerController, AccountsPageController
 ├── customer
 │   ├── domain          Customer
 │   └── infrastructure  CustomerRepository
@@ -248,7 +249,8 @@ A purchase of one card produces four purchase audit rows that share a `trace_id`
 |--------|------|---------|
 | `POST` | `/api/purchases` | Run authorize, clear, post customer, settle merchant. Body: `{ "cardToken": "card_ada_orquidea", "amount": "45.00" }`. Returns the trail above. |
 | `GET` | `/api/purchases/{purchaseId}` | The purchase, its hold, its clearing item, its settlement. |
-| `GET` | `/api/ledger/accounts` | The five accounts with posted balance and available balance. |
+| `GET` | `/api/ledger/accounts` | Every account with posted balance and available balance. |
+| `GET` | `/ledger/accounts` | Thymeleaf page of that same list: code, name, type, posted, available. |
 | `GET` | `/api/ledger/accounts/{code}` | One account, `code` such as `2100`, plus its journal lines. |
 | `GET` | `/api/ledger/journal` | Every journal entry and its lines, oldest first. |
 | `GET` | `/api/audit` | Audit rows. Filters: `traceId`, `purchaseId`, `actor`. |
@@ -273,7 +275,7 @@ Or with Docker (SQLite file at `./var/bank_dev.db`):
 docker compose up --build -d
 ```
 
-Swagger: `http://localhost:8086/swagger-ui.html`.
+Swagger: `http://localhost:8086/swagger-ui.html`. Accounts page: `http://localhost:8086/ledger/accounts`.
 
 After startup, `GET /api/ledger/accounts/2100` shows a posted balance of 1,000.00 and `GET /api/audit?actor=seeder:opening-deposit` shows the seed row. Then:
 
