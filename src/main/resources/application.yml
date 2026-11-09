@@ -18,6 +18,9 @@ spring:
   jackson:
     deserialization:
       fail-on-unknown-properties: false
+    generator:
+      write-bigdecimal-as-plain: true
+
 
 server:
   port: 8086

@@ -4,6 +4,8 @@ import com.orquidea.bank.ledger.api.dto.AccountBalanceResponse;
 import com.orquidea.bank.ledger.api.dto.AccountDetailResponse;
 import com.orquidea.bank.ledger.api.dto.JournalEntryResponse;
 import com.orquidea.bank.ledger.application.BalanceQuery;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,16 +24,22 @@ public class LedgerController {
     }
 
     @GetMapping("/api/ledger/accounts")
+    @Operation(summary = "Chart of accounts with posted and available balances")
     public List<AccountBalanceResponse> accounts() {
         return balances.listAccounts();
     }
 
     @GetMapping("/api/ledger/accounts/{code}")
-    public AccountDetailResponse account(@PathVariable String code) {
+    @Operation(summary = "One account plus its journal lines")
+    public AccountDetailResponse account(
+            @Parameter(example = "2100", description = "Account code")
+            @PathVariable String code
+    ) {
         return balances.getAccount(code);
     }
 
     @GetMapping("/api/ledger/journal")
+    @Operation(summary = "Every journal entry and its lines, oldest first")
     public List<JournalEntryResponse> journal() {
         return balances.listJournal();
     }

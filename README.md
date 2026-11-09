@@ -267,6 +267,12 @@ Declined cases, so the books can be checked when a purchase must not post:
 ./mvnw spring-boot:run
 ```
 
+Or with Docker (SQLite file at `./var/bank_dev.db`):
+
+```bash
+docker compose up --build -d
+```
+
 Swagger: `http://localhost:8086/swagger-ui.html`.
 
 After startup, `GET /api/ledger/accounts/2100` shows a posted balance of 1,000.00 and `GET /api/audit?actor=seeder:opening-deposit` shows the seed row. Then:
@@ -279,6 +285,14 @@ curl -s -X POST http://localhost:8086/api/purchases \
 ```
 
 Follow `traceId` with `GET /api/audit?traceId=...` and re-read account `2100`, `2200`, `2300`, and `4100`.
+
+### Postman
+
+Import [`postman/Bank.postman_collection.json`](postman/Bank.postman_collection.json) and [`postman/local.postman_environment.json`](postman/local.postman_environment.json). The collection is generated from Springdoc OpenAPI. To regenerate (API must be running):
+
+```bash
+./scripts/generate-postman.sh
+```
 
 To load the fixture again, stop the app, delete `./var/bank_dev.db`, and start it again.
 

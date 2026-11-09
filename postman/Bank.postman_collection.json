@@ -1,0 +1,639 @@
+{
+  "item": [
+    {
+      "name": "api",
+      "description": "",
+      "item": [
+        {
+          "name": "purchases",
+          "description": "",
+          "item": [
+            {
+              "id": "740cb6ea-e473-450c-b416-7cdf1627bece",
+              "name": "Run authorize, clear, post customer, settle merchant",
+              "request": {
+                "name": "Run authorize, clear, post customer, settle merchant",
+                "description": {},
+                "url": {
+                  "path": [
+                    "api",
+                    "purchases"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "disabled": false,
+                    "description": {
+                      "content": "Replay returns the original trail",
+                      "type": "text/plain"
+                    },
+                    "key": "Idempotency-Key",
+                    "value": "{{idempotencyKey}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "method": "POST",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"amount\": \"{{amount}}\",\n  \"cardToken\": \"{{cardToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": null
+              },
+              "response": [
+                {
+                  "id": "70be60c6-752f-4d41-bed8-7e863045cc90",
+                  "name": "OK",
+                  "originalRequest": {
+                    "url": {
+                      "path": [
+                        "api",
+                        "purchases"
+                      ],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "header": [
+                      {
+                        "disabled": false,
+                        "description": {
+                          "content": "Replay returns the original trail",
+                          "type": "text/plain"
+                        },
+                        "key": "Idempotency-Key",
+                        "value": "{{idempotencyKey}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "*/*"
+                      }
+                    ],
+                    "method": "POST",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"amount\": \"{{amount}}\",\n  \"cardToken\": \"{{cardToken}}\"\n}",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      }
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "*/*"
+                    }
+                  ],
+                  "body": "{\n  \"purchaseId\": \"<string>\",\n  \"traceId\": \"<string>\",\n  \"status\": \"<string>\",\n  \"steps\": [\n    {\n      \"stage\": \"<string>\",\n      \"purchaseStatus\": \"<string>\",\n      \"available\": \"<string>\",\n      \"posted\": \"<string>\"\n    },\n    {\n      \"stage\": \"<string>\",\n      \"purchaseStatus\": \"<string>\",\n      \"available\": \"<string>\",\n      \"posted\": \"<string>\"\n    }\n  ]\n}",
+                  "cookie": [],
+                  "_postman_previewlanguage": "text"
+                }
+              ],
+              "event": [],
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              }
+            },
+            {
+              "name": "{purchaseId}",
+              "description": "",
+              "item": [
+                {
+                  "id": "cf5a397c-a0be-46ca-a3fe-ccca521c2074",
+                  "name": "Purchase with hold, clearing item, and settlement",
+                  "request": {
+                    "name": "Purchase with hold, clearing item, and settlement",
+                    "description": {},
+                    "url": {
+                      "path": [
+                        "api",
+                        "purchases",
+                        ":purchaseId"
+                      ],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "type": "any",
+                          "value": "{{purchaseId}}",
+                          "key": "purchaseId",
+                          "disabled": false,
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          }
+                        }
+                      ]
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "*/*"
+                      }
+                    ],
+                    "method": "GET",
+                    "body": {},
+                    "auth": null
+                  },
+                  "response": [
+                    {
+                      "id": "d6f83579-e6c2-4159-a2f5-63a4cb7e6cca",
+                      "name": "OK",
+                      "originalRequest": {
+                        "url": {
+                          "path": [
+                            "api",
+                            "purchases",
+                            ":purchaseId"
+                          ],
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "query": [],
+                          "variable": [
+                            {
+                              "disabled": false,
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              },
+                              "type": "any",
+                              "value": "{{purchaseId}}",
+                              "key": "purchaseId"
+                            }
+                          ]
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "*/*"
+                          }
+                        ],
+                        "method": "GET",
+                        "body": {}
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "*/*"
+                        }
+                      ],
+                      "body": "{\n  \"purchaseId\": \"<string>\",\n  \"traceId\": \"<string>\",\n  \"status\": \"<string>\",\n  \"amount\": \"<string>\",\n  \"cardToken\": \"<string>\",\n  \"hold\": {\n    \"id\": \"<integer>\",\n    \"amount\": \"<string>\",\n    \"status\": \"<string>\",\n    \"releasedAt\": \"<string>\"\n  },\n  \"clearingItem\": {\n    \"id\": \"<integer>\",\n    \"amount\": \"<string>\"\n  },\n  \"settlement\": {\n    \"id\": \"<integer>\",\n    \"amount\": \"<string>\",\n    \"feeAmount\": \"<string>\"\n  }\n}",
+                      "cookie": [],
+                      "_postman_previewlanguage": "text"
+                    }
+                  ],
+                  "event": [],
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "ledger",
+          "description": "",
+          "item": [
+            {
+              "name": "journal",
+              "description": "",
+              "item": [
+                {
+                  "id": "3b692597-d73c-4cf6-8da6-bb60eed481b1",
+                  "name": "Every journal entry and its lines, oldest first",
+                  "request": {
+                    "name": "Every journal entry and its lines, oldest first",
+                    "description": {},
+                    "url": {
+                      "path": [
+                        "api",
+                        "ledger",
+                        "journal"
+                      ],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "*/*"
+                      }
+                    ],
+                    "method": "GET",
+                    "body": {},
+                    "auth": null
+                  },
+                  "response": [
+                    {
+                      "id": "3f2f6937-132c-48e9-81b4-d119d5b400ef",
+                      "name": "OK",
+                      "originalRequest": {
+                        "url": {
+                          "path": [
+                            "api",
+                            "ledger",
+                            "journal"
+                          ],
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "query": [],
+                          "variable": []
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "*/*"
+                          }
+                        ],
+                        "method": "GET",
+                        "body": {}
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "*/*"
+                        }
+                      ],
+                      "body": "[\n  {\n    \"id\": \"<integer>\",\n    \"postedAt\": \"<string>\",\n    \"lines\": [\n      {\n        \"journalEntryId\": \"<integer>\",\n        \"side\": \"<string>\",\n        \"amount\": \"<string>\",\n        \"accountCode\": \"<string>\"\n      },\n      {\n        \"journalEntryId\": \"<integer>\",\n        \"side\": \"<string>\",\n        \"amount\": \"<string>\",\n        \"accountCode\": \"<string>\"\n      }\n    ]\n  },\n  {\n    \"id\": \"<integer>\",\n    \"postedAt\": \"<string>\",\n    \"lines\": [\n      {\n        \"journalEntryId\": \"<integer>\",\n        \"side\": \"<string>\",\n        \"amount\": \"<string>\",\n        \"accountCode\": \"<string>\"\n      },\n      {\n        \"journalEntryId\": \"<integer>\",\n        \"side\": \"<string>\",\n        \"amount\": \"<string>\",\n        \"accountCode\": \"<string>\"\n      }\n    ]\n  }\n]",
+                      "cookie": [],
+                      "_postman_previewlanguage": "text"
+                    }
+                  ],
+                  "event": [],
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  }
+                }
+              ]
+            },
+            {
+              "name": "accounts",
+              "description": "",
+              "item": [
+                {
+                  "id": "9bbb1424-bfd8-4c99-983e-eb95892b2b29",
+                  "name": "Chart of accounts with posted and available balances",
+                  "request": {
+                    "name": "Chart of accounts with posted and available balances",
+                    "description": {},
+                    "url": {
+                      "path": [
+                        "api",
+                        "ledger",
+                        "accounts"
+                      ],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "query": [],
+                      "variable": []
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "*/*"
+                      }
+                    ],
+                    "method": "GET",
+                    "body": {},
+                    "auth": null
+                  },
+                  "response": [
+                    {
+                      "id": "74d00607-76a3-4fe2-b3b7-c48d41553c00",
+                      "name": "OK",
+                      "originalRequest": {
+                        "url": {
+                          "path": [
+                            "api",
+                            "ledger",
+                            "accounts"
+                          ],
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "query": [],
+                          "variable": []
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "*/*"
+                          }
+                        ],
+                        "method": "GET",
+                        "body": {}
+                      },
+                      "status": "OK",
+                      "code": 200,
+                      "header": [
+                        {
+                          "key": "Content-Type",
+                          "value": "*/*"
+                        }
+                      ],
+                      "body": "[\n  {\n    \"code\": \"<string>\",\n    \"name\": \"<string>\",\n    \"type\": \"<string>\",\n    \"posted\": \"<string>\",\n    \"available\": \"<string>\"\n  },\n  {\n    \"code\": \"<string>\",\n    \"name\": \"<string>\",\n    \"type\": \"<string>\",\n    \"posted\": \"<string>\",\n    \"available\": \"<string>\"\n  }\n]",
+                      "cookie": [],
+                      "_postman_previewlanguage": "text"
+                    }
+                  ],
+                  "event": [],
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  }
+                },
+                {
+                  "name": "{code}",
+                  "description": "",
+                  "item": [
+                    {
+                      "id": "20ba9ded-685e-4b27-9f97-2f6ef6c2994f",
+                      "name": "One account plus its journal lines",
+                      "request": {
+                        "name": "One account plus its journal lines",
+                        "description": {},
+                        "url": {
+                          "path": [
+                            "api",
+                            "ledger",
+                            "accounts",
+                            ":code"
+                          ],
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "query": [],
+                          "variable": [
+                            {
+                              "type": "any",
+                              "value": "<string>",
+                              "key": "code",
+                              "disabled": false,
+                              "description": {
+                                "content": "(Required) Account code",
+                                "type": "text/plain"
+                              }
+                            }
+                          ]
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "*/*"
+                          }
+                        ],
+                        "method": "GET",
+                        "body": {},
+                        "auth": null
+                      },
+                      "response": [
+                        {
+                          "id": "636e98c3-afe0-4b6f-9a5a-16d6e640e719",
+                          "name": "OK",
+                          "originalRequest": {
+                            "url": {
+                              "path": [
+                                "api",
+                                "ledger",
+                                "accounts",
+                                ":code"
+                              ],
+                              "host": [
+                                "{{baseUrl}}"
+                              ],
+                              "query": [],
+                              "variable": [
+                                {
+                                  "disabled": false,
+                                  "description": {
+                                    "content": "(Required) Account code",
+                                    "type": "text/plain"
+                                  },
+                                  "type": "any",
+                                  "value": "<string>",
+                                  "key": "code"
+                                }
+                              ]
+                            },
+                            "header": [
+                              {
+                                "key": "Accept",
+                                "value": "*/*"
+                              }
+                            ],
+                            "method": "GET",
+                            "body": {}
+                          },
+                          "status": "OK",
+                          "code": 200,
+                          "header": [
+                            {
+                              "key": "Content-Type",
+                              "value": "*/*"
+                            }
+                          ],
+                          "body": "{\n  \"code\": \"<string>\",\n  \"name\": \"<string>\",\n  \"type\": \"<string>\",\n  \"posted\": \"<string>\",\n  \"available\": \"<string>\",\n  \"lines\": [\n    {\n      \"journalEntryId\": \"<integer>\",\n      \"side\": \"<string>\",\n      \"amount\": \"<string>\",\n      \"accountCode\": \"<string>\"\n    },\n    {\n      \"journalEntryId\": \"<integer>\",\n      \"side\": \"<string>\",\n      \"amount\": \"<string>\",\n      \"accountCode\": \"<string>\"\n    }\n  ]\n}",
+                          "cookie": [],
+                          "_postman_previewlanguage": "text"
+                        }
+                      ],
+                      "event": [],
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "audit",
+          "description": "",
+          "item": [
+            {
+              "id": "5a3fc3b0-a271-44d5-a223-15d524c6af6a",
+              "name": "Audit rows filtered by traceId, purchaseId, or actor",
+              "request": {
+                "name": "Audit rows filtered by traceId, purchaseId, or actor",
+                "description": {},
+                "url": {
+                  "path": [
+                    "api",
+                    "audit"
+                  ],
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "query": [
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Groups one seed run or one purchase",
+                        "type": "text/plain"
+                      },
+                      "key": "traceId",
+                      "value": "{{traceId}}"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "Purchase public id",
+                        "type": "text/plain"
+                      },
+                      "key": "purchaseId",
+                      "value": "{{purchaseId}}"
+                    },
+                    {
+                      "disabled": false,
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "key": "actor",
+                      "value": "<string>"
+                    }
+                  ],
+                  "variable": []
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "*/*"
+                  }
+                ],
+                "method": "GET",
+                "body": {},
+                "auth": null
+              },
+              "response": [
+                {
+                  "id": "3cd77c2e-4d68-47b7-9ac5-92b79e5e0aaf",
+                  "name": "OK",
+                  "originalRequest": {
+                    "url": {
+                      "path": [
+                        "api",
+                        "audit"
+                      ],
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "query": [
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "Groups one seed run or one purchase",
+                            "type": "text/plain"
+                          },
+                          "key": "traceId",
+                          "value": "{{traceId}}"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "Purchase public id",
+                            "type": "text/plain"
+                          },
+                          "key": "purchaseId",
+                          "value": "{{purchaseId}}"
+                        },
+                        {
+                          "disabled": false,
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "key": "actor",
+                          "value": "<string>"
+                        }
+                      ],
+                      "variable": []
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "*/*"
+                      }
+                    ],
+                    "method": "GET",
+                    "body": {}
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "*/*"
+                    }
+                  ],
+                  "body": "[\n  {\n    \"id\": \"<integer>\",\n    \"occurredAt\": \"<string>\",\n    \"actor\": \"<string>\",\n    \"action\": \"<string>\",\n    \"aggregateType\": \"<string>\",\n    \"aggregateId\": \"<string>\",\n    \"purchaseId\": \"<string>\",\n    \"traceId\": \"<string>\",\n    \"beforeJson\": \"<string>\",\n    \"afterJson\": \"<string>\"\n  },\n  {\n    \"id\": \"<integer>\",\n    \"occurredAt\": \"<string>\",\n    \"actor\": \"<string>\",\n    \"action\": \"<string>\",\n    \"aggregateType\": \"<string>\",\n    \"aggregateId\": \"<string>\",\n    \"purchaseId\": \"<string>\",\n    \"traceId\": \"<string>\",\n    \"beforeJson\": \"<string>\",\n    \"afterJson\": \"<string>\"\n  }\n]",
+                  "cookie": [],
+                  "_postman_previewlanguage": "text"
+                }
+              ],
+              "event": [],
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8086"
+    }
+  ],
+  "info": {
+    "_postman_id": "8efd84cd-f882-489a-831b-9496c750f072",
+    "name": "Spring Bank Bookkeeping",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Ledger and purchase-walk API for Orquídea Bank (Spring Boot).\n\n**Setup**\n1. Import this collection and `local.postman_environment.json`.\n2. Select environment **Orquídea Bank — Local**.\n3. Demo card token: `card_ada_orquidea` (Ada, deposit `2100`). Merchant settlement always credits Café Orquídea (`2200`). Fee is `1.50` when amount ≥ `40.00`, else `0.00`.\n4. Send a unique `Idempotency-Key` per purchase; the same key returns the original trail with no second walk.\n\nSuggested first call: **POST /api/purchases** with body `{\"cardToken\":\"{{cardToken}}\",\"amount\":\"{{amount}}\"}` and header `Idempotency-Key: {{idempotencyKey}}`."
+  }
+}

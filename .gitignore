@@ -9,3 +9,5 @@ var/*.db
 var/*.db-*
 *.log
 .vscode/
+_temp/*
+!_temp/.gitkeep
