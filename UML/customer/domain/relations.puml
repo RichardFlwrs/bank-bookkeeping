@@ -31,7 +31,10 @@ Card "1" --> "1" Customer : holder
 
 note bottom of Customer
   The person who holds a deposit account and a card.
-  Fixture: Ada Lovelace owns account 2100.
+  Fixture: Ada Lovelace owns account 2100,
+  username ada, password orquidea (BCrypt hash).
+  Other seeded customers: username c plus deposit code.
+  Password hash is never written to audit_event.
   Cash, suspense, and income accounts have no customer.
   The card row lives in card; this context stores the account reference.
 end note

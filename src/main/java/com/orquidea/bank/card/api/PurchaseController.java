@@ -25,6 +25,20 @@ public class PurchaseController {
         this.purchases = purchases;
     }
 
+    /**
+     * Today this runs authorize → clear → postCustomer → settleMerchant in one request.
+     * Real-world payments often sit in limbo between those stages; candidates for later work:
+     * <ul>
+     *   <li>Authorization hold waiting for merchant capture (auth done, no clear/post yet)</li>
+     *   <li>Amount not final yet (hotels, rentals, fuel, tips) — estimate hold, later capture</li>
+     *   <li>Clearing / settlement batch lag (overnight or business-day windows)</li>
+     *   <li>Merchant delay submitting clearing (auth can sit days until capture or expiry)</li>
+     *   <li>Network / bank pending processing before the ledger posts</li>
+     *   <li>Exceptions and reviews (fraud, amount mismatch, RFI) that pause posting</li>
+     *   <li>Auth expires unused — hold drops with no post (cancel, not settle)</li>
+     * </ul>
+     * Until those exist, available can differ from posted only while a hold is open inside this walk.
+     */
     @PostMapping("/api/purchases")
     @Operation(summary = "Run authorize, clear, post customer, settle merchant")
     public PurchaseTrailResponse create(
@@ -35,6 +49,11 @@ public class PurchaseController {
         return purchases.purchase(request, idempotencyKey);
     }
 
+    /**
+     * Returns the purchase plus hold, clearing item, and settlement.
+     * Later, this is the natural place to expose mid-walk limbo status
+     * (AUTHORIZED / CLEARED with no customer posting yet, expired holds, paused reviews).
+     */
     @GetMapping("/api/purchases/{purchaseId}")
     @Operation(summary = "Purchase with hold, clearing item, and settlement")
     public PurchaseDetailResponse show(@PathVariable String purchaseId) {

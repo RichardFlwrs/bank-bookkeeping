@@ -21,6 +21,12 @@ public class Customer {
     @Column(name = "deposit_account_id", nullable = false)
     private Integer depositAccountId;
 
+    @Column(length = 64)
+    private String username;
+
+    @Column(name = "password_hash", length = 100)
+    private String passwordHash;
+
     public Integer getId() {
         return id;
     }
@@ -40,6 +46,24 @@ public class Customer {
 
     public Customer setDepositAccountId(Integer depositAccountId) {
         this.depositAccountId = depositAccountId;
+        return this;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public Customer setUsername(String username) {
+        this.username = username;
+        return this;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public Customer setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
         return this;
     }
 }

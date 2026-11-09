@@ -1,82 +1,13 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Ledger accounts</title>
-    <style>
-        :root {
-            color-scheme: light;
-            --ink: #1c1917;
-            --muted: #57534e;
-            --line: #e7e5e4;
-            --paper: #fafaf9;
-            --head: #f5f5f4;
-        }
-
-        body {
-            margin: 0;
-            color: var(--ink);
-            background: var(--paper);
-            font-family: "Iowan Old Style", Palatino, Georgia, serif;
-        }
-
-        main {
-            max-width: 64rem;
-            margin: 0 auto;
-            padding: 2rem 1.25rem 3rem;
-        }
-
-        h1 {
-            margin: 0 0 0.35rem;
-            font-size: 1.75rem;
-            font-weight: 600;
-        }
-
-        .lead {
-            margin: 0 0 1.5rem;
-            color: var(--muted);
-        }
-
-        code {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-            font-size: 0.92em;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-variant-numeric: tabular-nums;
-        }
-
-        th,
-        td {
-            padding: 0.55rem 0.75rem;
-            border-bottom: 1px solid var(--line);
-            text-align: left;
-            vertical-align: top;
-        }
-
-        th {
-            position: sticky;
-            top: 0;
-            background: var(--head);
-            font-size: 0.75rem;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
-        }
-
-        .mono {
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        }
-
-        .num {
-            text-align: right;
-        }
-    </style>
 </head>
 <body>
-<main>
+<main layout:fragment="content">
     <h1>Ledger accounts</h1>
     <p class="lead">
         <span id="account-count" th:text="${accounts.size()}">0</span>

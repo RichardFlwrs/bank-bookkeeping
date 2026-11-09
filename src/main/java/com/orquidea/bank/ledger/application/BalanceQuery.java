@@ -46,6 +46,17 @@ public class BalanceQuery {
     public AccountDetailResponse getAccount(String code) {
         Account account = accounts.findByCode(code)
                 .orElseThrow(() -> ApiException.notFound("account_not_found"));
+        return toDetail(account);
+    }
+
+    @Transactional(readOnly = true)
+    public AccountDetailResponse getAccountById(Integer accountId) {
+        Account account = accounts.findById(accountId)
+                .orElseThrow(() -> ApiException.notFound("account_not_found"));
+        return toDetail(account);
+    }
+
+    private AccountDetailResponse toDetail(Account account) {
         List<JournalLineResponse> lines = journalEntries.findAll(Sort.by("id")).stream()
                 .flatMap(entry -> entry.getLines().stream()
                         .filter(line -> line.getAccount().getId().equals(account.getId()))

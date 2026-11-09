@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>Login</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <h1>Cardholder login</h1>
+    <p class="lead">Sign in to see your deposit account and journal history.</p>
+    <p class="flash" th:if="${param.error}">Unknown username or password.</p>
+    <p class="flash flash-ok" th:if="${param.logout}">Signed out.</p>
+    <form class="login-form" th:action="@{/login}" method="post">
+        <label>
+            Username
+            <input type="text" name="username" autocomplete="username" required autofocus>
+        </label>
+        <label>
+            Password
+            <input type="password" name="password" autocomplete="current-password" required>
+        </label>
+        <button type="submit">Sign in</button>
+    </form>
+</main>
+</body>
+</html>

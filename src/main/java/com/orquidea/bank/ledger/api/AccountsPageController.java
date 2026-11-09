@@ -16,6 +16,11 @@ public class AccountsPageController {
         this.balances = balances;
     }
 
+    /**
+     * Debugger chart: posted and available per account. Same limbo note as
+     * {@code GET /api/ledger/accounts} — open holds (and future delayed capture/settle)
+     * make available lag posted until customer posting runs.
+     */
     @GetMapping("/ledger/accounts")
     public String accounts(Model model) {
         model.addAttribute("accounts", balances.listAccounts());

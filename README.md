@@ -23,11 +23,11 @@ From the bank's point of view a customer deposit is a liability: the bank owes t
 Same shape as the Orquídea RSVP API.
 
 - Java 17, Spring Boot 3.5
-- Spring Web, Validation, Data JPA, Flyway
+- Spring Web, Validation, Data JPA, Flyway, Security
 - SQLite at `./var/bank_dev.db` (one writer is enough for a single debug session)
 - springdoc-openapi at `/swagger-ui.html`
-- Thymeleaf page at `/ledger/accounts` for the chart returned by `GET /api/ledger/accounts`
-- No session auth. The API is a local instrument for watching the books.
+- Thymeleaf pages: `/ledger/accounts` (chart), `/login`, `/ledger/me` (signed-in cardholder)
+- Session login for cardholders. The JSON `/api/**` routes stay open for the debugger.
 
 Package root: `com.orquidea.bank`. `BankApplication` stays at that root for component scanning.
 
@@ -38,7 +38,7 @@ Code is organized by bounded context, then by layer (`domain`, `application`, `i
 | Context | Responsibility | Packages |
 |---------|----------------|----------|
 | `ledger` | Chart of accounts, journal, posted balances | `ledger.domain`, `ledger.application`, `ledger.infrastructure`, `ledger.api` |
-| `customer` | The person who holds a deposit account and a card | `customer.domain`, `customer.infrastructure` |
+| `customer` | The person who holds a deposit account and a card | `customer.domain`, `customer.application`, `customer.infrastructure`, `customer.api` |
 | `merchant` | The shop that gets paid | `merchant.domain`, `merchant.infrastructure` |
 | `card` | The card, the hold, and the purchase walk | `card.domain`, `card.application`, `card.infrastructure`, `card.api` |
 | `settlement` | Clearing and the suspense-to-merchant movement | `settlement.domain`, `settlement.application`, `settlement.infrastructure` |
@@ -55,7 +55,9 @@ com.orquidea.bank
 │   └── api             LedgerController, AccountsPageController
 ├── customer
 │   ├── domain          Customer
-│   └── infrastructure  CustomerRepository
+│   ├── application     CardholderUserDetailsService, CardholderPrincipal
+│   ├── infrastructure  CustomerRepository
+│   └── api             LoginPageController, MyLedgerPageController
 ├── merchant
 │   ├── domain          Merchant
 │   └── infrastructure  MerchantRepository
@@ -75,8 +77,9 @@ com.orquidea.bank
 │   └── api             AuditController
 └── shared
     ├── domain          ApiException
-    └── infrastructure  DevDataSeeder, BankDataFixture, BankSeedProperties, seeders
+    └── infrastructure  SecurityConfig, DevDataSeeder, BankDataFixture, BankSeedProperties, seeders
 ```
+
 
 `PurchaseService` is the only type that walks the whole purchase. It calls `card`, `settlement`, `ledger`, and `audit` in order. Contexts do not reach into each other's tables.
 
@@ -111,7 +114,7 @@ Seeded chart (defaults: 1000 customers, 50 merchants):
 
 | Model | Role |
 |-------|------|
-| `Customer` | A deposit-account holder. First seeded row is Ada Lovelace (`2100`). |
+| `Customer` | A deposit-account holder with a login. First seeded row is Ada Lovelace (`2100`, username `ada`). Password hash is BCrypt; never written to audit. |
 
 ### merchant
 
@@ -171,16 +174,16 @@ Available balance equals posted balance while no hold is open. Between authorize
 
 ## Seeders
 
-`DevDataSeeder` runs on startup when the chart is empty, same idea as the RSVP `CommandLineRunner`: if the books already exist, it does nothing. Profile `test` does not run it. Deleting `./var/bank_dev.db` and starting again reloads the fixture.
+`DevDataSeeder` runs on startup when the chart is empty, same idea as the RSVP `CommandLineRunner`. If the books already exist, it backfills customer usernames and password hashes that are still null (so an older `./var/bank_dev.db` gets logins on restart). Profile `test` does not run it. Deleting `./var/bank_dev.db` and starting again reloads the fixture.
 
-Configured by `app.bank-seed` (defaults: `customers=1000`, `merchants=50`, `opening-deposit=1000.00`, `seed=42`). The test profile uses `customers=5` and `merchants=2`. Ada Lovelace (`2100`, card token `card_ada_orquidea`) and Café Orquídea (`2200`) are always the first rows so the purchase curl below still works.
+Configured by `app.bank-seed` (defaults: `customers=1000`, `merchants=50`, `opening-deposit=1000.00`, `seed=42`). The test profile uses `customers=5` and `merchants=2`. Ada Lovelace (`2100`, card token `card_ada_orquidea`, username `ada`, password `orquidea`) and Café Orquídea (`2200`) are always the first rows so the purchase curl and the login page still work. Other customers get username `c` plus their deposit code (for example `c3001`) and the same password.
 
-Every seeder calls `AuditRecorder`. A seed that wrote accounts or journal lines and wrote no audit row is a bug.
+Every seeder calls `AuditRecorder`. A seed that wrote accounts or journal lines and wrote no audit row is a bug. Customer seed and credential backfill record `username` in the snapshot and never the password hash.
 
 | Seeder | What it creates | Audit action |
 |--------|-----------------|--------------|
 | `ChartOfAccountsSeeder` | Cash, suspense, income, plus one deposit account per customer and merchant | `SEED_ACCOUNT` per account |
-| `CustomerSeeder` | One customer per deposit account (Ada first) | `SEED_CUSTOMER` |
+| `CustomerSeeder` | One customer per deposit account (Ada first), with username and password hash | `SEED_CUSTOMER` |
 | `MerchantSeeder` | One merchant per deposit account (Café first) | `SEED_MERCHANT` |
 | `OpeningDepositSeeder` | One `1,000.00` journal entry per customer (debit Cash, credit that deposit) | `SEED_DEPOSIT` |
 | `CardSeeder` | One card per customer (Ada's token `card_ada_orquidea`) | `SEED_CARD` |
@@ -232,7 +235,7 @@ Table: `audit_event`
 |--------|------|-------|
 | `id` | integer, primary key | |
 | `occurred_at` | text, ISO-8601 UTC | When the mutation committed. |
-| `actor` | text | `seeder:chart-of-accounts`, `seeder:customer`, `seeder:merchant`, `seeder:opening-deposit`, `seeder:card`, or `purchase`. |
+| `actor` | text | `seeder:chart-of-accounts`, `seeder:customer`, `seeder:customer-credentials`, `seeder:merchant`, `seeder:opening-deposit`, `seeder:card`, or `purchase`. |
 | `action` | text | One `AuditAction`: `SEED_ACCOUNT`, `SEED_CUSTOMER`, `SEED_MERCHANT`, `SEED_DEPOSIT`, `SEED_CARD`, `PURCHASE_AUTHORIZED`, `PURCHASE_CLEARED`, `PURCHASE_CUSTOMER_POSTED`, `PURCHASE_SETTLED`. |
 | `aggregate_type` | text | Model name: `Account`, `Customer`, `Merchant`, `JournalEntry`, `Card`, `Purchase`, `AuthorizationHold`, `ClearingItem`, `Settlement`. |
 | `aggregate_id` | text | Id of that row. |
@@ -251,6 +254,10 @@ A purchase of one card produces four purchase audit rows that share a `trace_id`
 | `GET` | `/api/purchases/{purchaseId}` | The purchase, its hold, its clearing item, its settlement. |
 | `GET` | `/api/ledger/accounts` | Every account with posted balance and available balance. |
 | `GET` | `/ledger/accounts` | Thymeleaf page of that same list: code, name, type, posted, available. |
+| `GET` | `/login` | Cardholder login form. |
+| `POST` | `/login` | Session form login. Username and password. Success goes to `/ledger/me`. |
+| `POST` | `/logout` | End the session. |
+| `GET` | `/ledger/me` | Signed-in cardholder's deposit account and journal lines. Session only. |
 | `GET` | `/api/ledger/accounts/{code}` | One account, `code` such as `2100`, plus its journal lines. |
 | `GET` | `/api/ledger/journal` | Every journal entry and its lines, oldest first. |
 | `GET` | `/api/audit` | Audit rows. Filters: `traceId`, `purchaseId`, `actor`. |
@@ -262,6 +269,20 @@ Declined cases, so the books can be checked when a purchase must not post:
 | Unknown `cardToken` | `404`, no rows written |
 | Amount above available balance | `422`, purchase stays unwritten, journal untouched |
 | Replay of the same `Idempotency-Key` header | The original trail again, no second hold and no second posting |
+
+### Payment limbo (later)
+
+Today `POST /api/purchases` runs the whole walk in one request. Real payments often sit between stages. Controller comments mark those as future work; short summary:
+
+| Endpoint | Today | Later candidates |
+|----------|--------|------------------|
+| `POST /api/purchases` | Authorize, clear, post customer, settle merchant in one call. Available differs from posted only while a hold is open inside that walk. | Auth waiting for merchant capture; estimated amounts (hotels, fuel, tips); clearing/settlement batch lag; merchant delay; network/bank pending; fraud/review pause; auth expires unused (hold drops, no post). |
+| `GET /api/purchases/{purchaseId}` | Purchase plus hold, clearing item, and settlement after the walk. | Mid-walk limbo status: `AUTHORIZED` / `CLEARED` with no customer posting yet, expired holds, paused reviews. |
+| `GET /api/ledger/accounts` | Posted = journal lines; available = posted minus open holds. | Keep holds open across requests so the chart shows available lagging posted for longer than one purchase. |
+| `GET /ledger/accounts` | Same chart as the JSON list, for the debugger. | Same as `/api/ledger/accounts` when delayed capture/settle keeps holds open. |
+| `GET /api/ledger/accounts/{code}` | One account and its posted journal lines. Holds only change available. | Pending/authorized activity alongside posted lines. |
+| `GET /api/ledger/journal` | Posted journal entries only. | Auth holds, uncleared captures, and expired unused auths stay out until those cases write (or omit) journal rows. |
+| `GET /ledger/me` | Cardholder posted, available, and posted journal lines. | Open holds and mid-walk purchases on the page (available &lt; posted, or pending items that are not lines yet). |
 
 ## Run
 
@@ -275,7 +296,7 @@ Or with Docker (SQLite file at `./var/bank_dev.db`):
 docker compose up --build -d
 ```
 
-Swagger: `http://localhost:8086/swagger-ui.html`. Accounts page: `http://localhost:8086/ledger/accounts`.
+Swagger: `http://localhost:8086/swagger-ui.html`. Accounts page: `http://localhost:8086/ledger/accounts`. Login: `http://localhost:8086/login` (`ada` / `orquidea`).
 
 After startup, `GET /api/ledger/accounts/2100` shows a posted balance of 1,000.00 and `GET /api/audit?actor=seeder:opening-deposit` shows the seed row. Then:
 
@@ -300,4 +321,4 @@ To load the fixture again, stop the app, delete `./var/bank_dev.db`, and start i
 
 ## Out of scope
 
-Other banks, card networks, cash moving in or out after the seed, interest, loans, chargebacks, end-of-day batch, and authentication. Those belong to a later spec if the walk above is already visible in the debugger.
+Other banks, card networks, cash moving in or out after the seed, interest, loans, chargebacks, end-of-day batch, merchant or staff logins, locking down `/api/**`, and the payment-limbo cases listed under [Payment limbo (later)](#payment-limbo-later). Those belong to a later spec if the cardholder walk above is already visible.

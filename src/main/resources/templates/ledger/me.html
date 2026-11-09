@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<head>
+    <title>My ledger</title>
+</head>
+<body>
+<main layout:fragment="content">
+    <h1>My ledger</h1>
+    <p class="lead">
+        Signed in as <span class="mono" th:text="${cardholderName}">ada</span>.
+        Deposit account from your session.
+    </p>
+    <dl class="summary" th:if="${account != null}">
+        <div>
+            <dt>Code</dt>
+            <dd class="mono" id="account-code" th:text="${account.code}">2100</dd>
+        </div>
+        <div>
+            <dt>Name</dt>
+            <dd th:text="${account.name}">Customer Deposits</dd>
+        </div>
+        <div>
+            <dt>Type</dt>
+            <dd th:text="${account.type}">LIABILITY</dd>
+        </div>
+        <div>
+            <dt>Posted</dt>
+            <dd class="mono" th:text="${account.posted}">0.00</dd>
+        </div>
+        <div>
+            <dt>Available</dt>
+            <dd class="mono" th:text="${account.available}">0.00</dd>
+        </div>
+    </dl>
+    <h2>Journal lines</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>Entry</th>
+            <th>Side</th>
+            <th class="num">Amount</th>
+            <th>Account</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="line : ${account.lines}">
+            <td class="mono" th:text="${line.journalEntryId}">1</td>
+            <td th:text="${line.side}">CREDIT</td>
+            <td class="mono num" th:text="${line.amount}">0.00</td>
+            <td class="mono" th:text="${line.accountCode}">2100</td>
+        </tr>
+        <tr th:if="${#lists.isEmpty(account.lines)}">
+            <td colspan="4">No journal lines.</td>
+        </tr>
+        </tbody>
+    </table>
+</main>
+</body>
+</html>
