@@ -1,0 +1,58 @@
+@startuml purchase-walk
+title e2e — one card payment
+
+' Script: e2e/purchase-walk/purchase_walk.py
+' The client stands in for a browser. It mints the idempotency key.
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Purchase client" as client
+
+rectangle "Bank" {
+  usecase "Pay with a card" as pay
+  usecase "Read the purchase" as show
+  usecase "Read account balances" as accounts
+  usecase "Read the audit trail" as trail
+}
+
+client --> accounts
+client --> pay
+client --> show
+client --> trail
+
+note right of pay
+  POST /api/purchases
+  The client declares Idempotency-Key
+  for this attempt (e2e-<uuid>).
+  The same key returns the original trail.
+  Body: card token and amount.
+end note
+
+note right of show
+  GET /api/purchases/{purchaseId}
+  Hold, clearing item, and settlement.
+end note
+
+note right of accounts
+  GET /api/ledger/accounts/{code}
+  2100 customer, 2200 merchant,
+  2300 suspense, 4100 income.
+  Read before the payment and after it.
+end note
+
+note right of trail
+  GET /api/audit?traceId=
+  traceId comes back from the payment.
+end note
+
+note bottom
+  Order: snapshot the four accounts, pay,
+  read the purchase, read the accounts again,
+  read the audit for that trace.
+  The client checks the amount, the fee,
+  and the four purchase actions.
+end note
+
+@enduml
