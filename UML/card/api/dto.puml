@@ -1,0 +1,98 @@
+@startuml card-api-dto
+title card.api.dto — purchase JSON contracts
+
+' API records only. Domain relations: UML/card/domain/relations.puml
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package card {
+  package api {
+    package dto {
+      class CreatePurchaseRequest <<request>> {
+        + cardToken: String
+        + amount: BigDecimal
+      }
+
+      class PurchaseTrailResponse <<response>> {
+        + purchaseId: String
+        + traceId: String
+        + status: String
+        + steps: List~PurchaseStepResponse~
+      }
+
+      class PurchaseStepResponse <<response>> {
+        + stage: String
+        + purchaseStatus: String
+        + available: String
+        + posted: String
+      }
+
+      class PurchaseDetailResponse <<response>> {
+        + purchaseId: String
+        + traceId: String
+        + status: String
+        + amount: String
+        + cardToken: String
+        + hold: HoldResponse
+        + clearingItem: ClearingItemResponse
+        + settlement: SettlementResponse
+      }
+
+      class HoldResponse <<response>> {
+        + id: Integer
+        + amount: String
+        + status: String
+        + releasedAt: String
+      }
+
+      class ClearingItemResponse <<response>> {
+        + id: Integer
+        + amount: String
+      }
+
+      class SettlementResponse <<response>> {
+        + id: Integer
+        + amount: String
+        + feeAmount: String
+      }
+
+      PurchaseTrailResponse "1" *-- "0..*" PurchaseStepResponse : steps
+      PurchaseDetailResponse "1" *-- "0..1" HoldResponse : hold
+      PurchaseDetailResponse "1" *-- "0..1" ClearingItemResponse : clearingItem
+      PurchaseDetailResponse "1" *-- "0..1" SettlementResponse : settlement
+    }
+  }
+}
+
+package card.domain <<external>> {
+  class Purchase
+  class AuthorizationHold
+}
+
+package settlement.domain <<external>> {
+  class ClearingItem
+  class Settlement
+}
+
+CreatePurchaseRequest ..> Purchase : starts walk
+PurchaseTrailResponse ..> Purchase : status trail
+PurchaseDetailResponse ..> Purchase
+HoldResponse ..> AuthorizationHold
+ClearingItemResponse ..> ClearingItem
+SettlementResponse ..> Settlement
+
+note bottom of CreatePurchaseRequest
+  POST /api/purchases body.
+  Header Idempotency-Key is optional
+  and is not a DTO field.
+end note
+
+note bottom of PurchaseStepResponse
+  available and posted are Ada's
+  deposit balances after that stage,
+  as decimal strings.
+end note
+
+@enduml

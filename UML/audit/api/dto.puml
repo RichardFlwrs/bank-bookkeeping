@@ -1,0 +1,44 @@
+@startuml audit-api-dto
+title audit.api.dto — audit JSON contracts
+
+' API records only. Domain relations: UML/audit/domain/relations.puml
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package audit {
+  package api {
+    package dto {
+      class AuditEventResponse <<response>> {
+        + id: Integer
+        + occurredAt: String
+        + actor: String
+        + action: String
+        + aggregateType: String
+        + aggregateId: String
+        + purchaseId: String
+        + traceId: String
+        + beforeJson: String
+        + afterJson: String
+      }
+    }
+  }
+}
+
+package audit.domain <<external>> {
+  class AuditEvent
+  enum AuditAction
+}
+
+AuditEventResponse ..> AuditEvent
+AuditEventResponse ..> AuditAction : action name
+
+note bottom of AuditEventResponse
+  Append-only row as returned by GET /api/audit.
+  Filters: traceId, purchaseId, actor.
+  purchaseId is null for seed rows.
+  beforeJson is null when the aggregate was created.
+end note
+
+@enduml

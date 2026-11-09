@@ -1,0 +1,28 @@
+@startuml card-api-endpoints
+title card.api — PurchaseController routes
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package card.api {
+  class PurchaseController
+
+  package dto {
+    class CreatePurchaseRequest
+    class PurchaseTrailResponse
+    class PurchaseDetailResponse
+  }
+}
+
+PurchaseController --> CreatePurchaseRequest : "POST /api/purchases\nbody"
+PurchaseController --> PurchaseTrailResponse : "POST /api/purchases\nreturns"
+PurchaseController --> PurchaseDetailResponse : "GET /api/purchases/{purchaseId}\nreturns"
+
+note right of PurchaseController
+  Idempotency-Key header on POST
+  is optional. Declines:
+  unknown card → 404
+  insufficient available → 422
+end note
+
+@enduml

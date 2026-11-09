@@ -1,0 +1,26 @@
+@startuml ledger-api-endpoints
+title ledger.api — LedgerController routes
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package ledger.api {
+  class LedgerController
+
+  package dto {
+    class AccountBalanceResponse
+    class AccountDetailResponse
+    class JournalEntryResponse
+  }
+}
+
+LedgerController --> AccountBalanceResponse : "GET /api/ledger/accounts\nList"
+LedgerController --> AccountDetailResponse : "GET /api/ledger/accounts/{code}"
+LedgerController --> JournalEntryResponse : "GET /api/ledger/journal\nList"
+
+note right of LedgerController
+  code is a chart code such as 2100.
+  Journal list is oldest first.
+end note
+
+@enduml

@@ -1,0 +1,23 @@
+@startuml audit-api-endpoints
+title audit.api — AuditController routes
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package audit.api {
+  class AuditController
+
+  package dto {
+    class AuditEventResponse
+  }
+}
+
+AuditController --> AuditEventResponse : "GET /api/audit\nList\n?traceId&purchaseId&actor"
+
+note right of AuditController
+  All query params are optional.
+  Prefer one filter at a time
+  (traceId, then purchaseId, then actor).
+end note
+
+@enduml

@@ -1,0 +1,68 @@
+@startuml ledger-api-dto
+title ledger.api.dto — account and journal JSON contracts
+
+' API records only. Domain relations: UML/ledger/domain/relations.puml
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam classAttributeIconSize 0
+
+package ledger {
+  package api {
+    package dto {
+      class AccountBalanceResponse <<response>> {
+        + code: String
+        + name: String
+        + type: String
+        + posted: String
+        + available: String
+      }
+
+      class AccountDetailResponse <<response>> {
+        + code: String
+        + name: String
+        + type: String
+        + posted: String
+        + available: String
+        + lines: List~JournalLineResponse~
+      }
+
+      class JournalEntryResponse <<response>> {
+        + id: Integer
+        + postedAt: String
+        + lines: List~JournalLineResponse~
+      }
+
+      class JournalLineResponse <<response>> {
+        + journalEntryId: Integer
+        + side: String
+        + amount: String
+        + accountCode: String
+      }
+
+      AccountDetailResponse "1" *-- "0..*" JournalLineResponse : lines
+      JournalEntryResponse "1" *-- "2..*" JournalLineResponse : lines
+    }
+  }
+}
+
+package ledger.domain <<external>> {
+  class Account
+  class JournalEntry
+  class JournalLine
+}
+
+AccountBalanceResponse ..> Account
+AccountDetailResponse ..> Account
+JournalEntryResponse ..> JournalEntry
+JournalLineResponse ..> JournalLine
+
+note bottom of AccountBalanceResponse
+  posted = sum of posted journal lines
+  (sign by account type).
+  available = posted minus open holds
+  on customer deposit accounts.
+  Amounts are decimal strings.
+end note
+
+@enduml
