@@ -263,12 +263,12 @@ Declined cases, so the books can be checked when a purchase must not post:
 ./mvnw spring-boot:run
 ```
 
-Swagger: `http://localhost:8083/swagger-ui.html`.
+Swagger: `http://localhost:8086/swagger-ui.html`.
 
 After startup, `GET /api/ledger/accounts/2100` shows a posted balance of 1,000.00 and `GET /api/audit?actor=seeder:opening-deposit` shows the seed row. Then:
 
 ```bash
-curl -s -X POST http://localhost:8083/api/purchases \
+curl -s -X POST http://localhost:8086/api/purchases \
   -H 'Content-Type: application/json' \
   -H 'Idempotency-Key: coffee-1' \
   -d '{"cardToken":"card_ada_orquidea","amount":"45.00"}'

@@ -20,7 +20,7 @@ spring:
       fail-on-unknown-properties: false
 
 server:
-  port: 8083
+  port: 8086
 
 springdoc:
   api-docs:

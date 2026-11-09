@@ -1,0 +1,9 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlite:/data/bank_dev.db
+    volumes:
+      - ./var:/data
