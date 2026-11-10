@@ -26,7 +26,7 @@ Same shape as the Orquídea RSVP API.
 - Spring Web, Validation, Data JPA, Flyway, Security
 - SQLite at `./var/bank_dev.db` (one writer is enough for a single debug session)
 - springdoc-openapi at `/swagger-ui.html`
-- Thymeleaf pages: `/ledger/accounts` (chart), `/login`, `/ledger/me` (signed-in cardholder)
+- Thymeleaf pages: `/ledger/accounts` (chart), `/login`, `/ledger/me`, `/ledger/pay`
 - Session login for cardholders. The JSON `/api/**` routes stay open for the debugger.
 
 Package root: `com.orquidea.bank`. `BankApplication` stays at that root for component scanning.
@@ -57,7 +57,7 @@ com.orquidea.bank
 │   ├── domain          Customer
 │   ├── application     CardholderUserDetailsService, CardholderPrincipal
 │   ├── infrastructure  CustomerRepository
-│   └── api             LoginPageController, MyLedgerPageController
+│   └── api             LoginPageController, MyLedgerPageController, PayPageController
 ├── merchant
 │   ├── domain          Merchant
 │   └── infrastructure  MerchantRepository
@@ -250,15 +250,17 @@ A purchase of one card produces four purchase audit rows that share a `trace_id`
 
 | Method | Path | Purpose |
 |--------|------|---------|
-| `POST` | `/api/purchases` | Run authorize, clear, post customer, settle merchant. Body: `{ "cardToken": "card_ada_orquidea", "amount": "45.00" }`. Returns the trail above. |
+| `POST` | `/api/purchases` | Run authorize, clear, post customer, settle merchant. Body: `{ "cardToken": "card_ada_orquidea", "amount": "45.00" }`. Optional `label` and `merchantId`; omitted merchant settles to Café Orquídea. Returns the trail above. |
 | `GET` | `/api/purchases/{purchaseId}` | The purchase, its hold, its clearing item, its settlement. |
 | `GET` | `/api/ledger/accounts` | Every account with posted balance and available balance. |
 | `GET` | `/ledger/accounts` | Thymeleaf page of that same list: code, name, type, posted, available. |
 | `GET` | `/login` | Cardholder login form. |
 | `POST` | `/login` | Session form login. Username and password. Success goes to `/ledger/me`. |
 | `POST` | `/logout` | End the session. |
-| `GET` | `/ledger/me` | Signed-in cardholder's deposit account and journal lines. Session only. |
-| `GET` | `/api/ledger/accounts/{code}` | One account, `code` such as `2100`, plus its journal lines. |
+| `GET` | `/ledger/me` | Signed-in cardholder's deposit account and journal lines, newest first. Session only. |
+| `GET` | `/ledger/pay` | Pay page: large available balance, amount, label, merchant select, dice randomizers. Session only. |
+| `POST` | `/ledger/pay` | Charge the signed-in cardholder's card for amount/label/merchant, then redirect to `/ledger/me`. |
+| `GET` | `/api/ledger/accounts/{code}` | One account, `code` such as `2100`, plus its journal lines, newest first. |
 | `GET` | `/api/ledger/journal` | Every journal entry and its lines, oldest first. |
 | `GET` | `/api/audit` | Audit rows. Filters: `traceId`, `purchaseId`, `actor`. |
 
@@ -280,9 +282,10 @@ Today `POST /api/purchases` runs the whole walk in one request. Real payments of
 | `GET /api/purchases/{purchaseId}` | Purchase plus hold, clearing item, and settlement after the walk. | Mid-walk limbo status: `AUTHORIZED` / `CLEARED` with no customer posting yet, expired holds, paused reviews. |
 | `GET /api/ledger/accounts` | Posted = journal lines; available = posted minus open holds. | Keep holds open across requests so the chart shows available lagging posted for longer than one purchase. |
 | `GET /ledger/accounts` | Same chart as the JSON list, for the debugger. | Same as `/api/ledger/accounts` when delayed capture/settle keeps holds open. |
-| `GET /api/ledger/accounts/{code}` | One account and its posted journal lines. Holds only change available. | Pending/authorized activity alongside posted lines. |
+| `GET /api/ledger/accounts/{code}` | One account and its posted journal lines, newest first. Holds only change available. | Pending/authorized activity alongside posted lines. |
 | `GET /api/ledger/journal` | Posted journal entries only. | Auth holds, uncleared captures, and expired unused auths stay out until those cases write (or omit) journal rows. |
-| `GET /ledger/me` | Cardholder posted, available, and posted journal lines. | Open holds and mid-walk purchases on the page (available &lt; posted, or pending items that are not lines yet). |
+| `GET /ledger/me` | Cardholder posted, available, and posted journal lines, newest first. | Open holds and mid-walk purchases on the page (available &lt; posted, or pending items that are not lines yet). |
+| `GET` / `POST` `/ledger/pay` | Session pay form that runs the full walk with a chosen merchant and label. | Split the walk so the page can authorize now and capture later. |
 
 ## Run
 
@@ -296,7 +299,7 @@ Or with Docker (SQLite file at `./var/bank_dev.db`):
 docker compose up --build -d
 ```
 
-Swagger: `http://localhost:8086/swagger-ui.html`. Accounts page: `http://localhost:8086/ledger/accounts`. Login: `http://localhost:8086/login` (`ada` / `orquidea`).
+Swagger: `http://localhost:8086/swagger-ui.html`. Accounts page: `http://localhost:8086/ledger/accounts`. Login: `http://localhost:8086/login` (`ada` / `orquidea`). Pay: `http://localhost:8086/ledger/pay`.
 
 After startup, `GET /api/ledger/accounts/2100` shows a posted balance of 1,000.00 and `GET /api/audit?actor=seeder:opening-deposit` shows the seed row. Then:
 

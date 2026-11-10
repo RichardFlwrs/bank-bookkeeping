@@ -35,7 +35,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/ledger/accounts"
                         ).permitAll()
-                        .requestMatchers("/ledger/me").authenticated()
+                        .requestMatchers("/ledger/me", "/ledger/pay").authenticated()
                         .anyRequest().permitAll()
                 )
                 .formLogin(form -> form

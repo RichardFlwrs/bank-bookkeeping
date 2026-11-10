@@ -8,6 +8,8 @@ import com.orquidea.bank.card.domain.PurchaseStatus;
 import com.orquidea.bank.card.infrastructure.PurchaseRepository;
 import com.orquidea.bank.ledger.application.BalanceCalculator;
 import com.orquidea.bank.ledger.infrastructure.AccountRepository;
+import com.orquidea.bank.merchant.domain.Merchant;
+import com.orquidea.bank.merchant.infrastructure.MerchantRepository;
 import com.orquidea.bank.shared.domain.ApiException;
 import com.orquidea.bank.shared.infrastructure.BankDataFixture;
 import com.orquidea.bank.shared.infrastructure.seed.ChartOfAccountsSeeder;
@@ -40,6 +42,9 @@ class PurchaseServiceTest {
     AccountRepository accounts;
 
     @Autowired
+    MerchantRepository merchants;
+
+    @Autowired
     BalanceCalculator balances;
 
     @Autowired
@@ -57,7 +62,7 @@ class PurchaseServiceTest {
     @Test
     void purchaseWalkPostsAdaAndPaysCafe() {
         PurchaseTrailResponse trail = purchaseService.purchase(
-                new CreatePurchaseRequest("card_ada_orquidea", new BigDecimal("45.00")),
+                new CreatePurchaseRequest("card_ada_orquidea", new BigDecimal("45.00"), null, null),
                 "coffee-1"
         );
 
@@ -92,9 +97,40 @@ class PurchaseServiceTest {
     }
 
     @Test
+    void purchaseWithLabelPaysSelectedMerchant() {
+        Merchant other = merchants.findAll().stream()
+                .filter(m -> !m.getName().contains("Café"))
+                .findFirst()
+                .orElseThrow();
+
+        PurchaseTrailResponse trail = purchaseService.purchase(
+                new CreatePurchaseRequest(
+                        "card_ada_orquidea",
+                        new BigDecimal("40.00"),
+                        "mug",
+                        other.getId()
+                ),
+                "mug-1"
+        );
+
+        assertThat(trail.status()).isEqualTo(PurchaseStatus.POSTED.name());
+        var purchase = purchases.findAll().get(0);
+        assertThat(purchase.getLabel()).isEqualTo("mug");
+        assertThat(purchase.getMerchantId()).isEqualTo(other.getId());
+
+        var ada = accounts.findByCode(ChartOfAccountsSeeder.ADA_DEPOSIT_CODE).orElseThrow();
+        var cafe = accounts.findByCode(ChartOfAccountsSeeder.CAFE_DEPOSIT_CODE).orElseThrow();
+        var merchantAccount = accounts.findById(other.getDepositAccountId()).orElseThrow();
+
+        assertThat(balances.posted(ada)).isEqualByComparingTo("960.00");
+        assertThat(balances.posted(cafe)).isEqualByComparingTo("0.00");
+        assertThat(balances.posted(merchantAccount)).isEqualByComparingTo("38.50");
+    }
+
+    @Test
     void unknownCardIsNotFound() {
         assertThatThrownBy(() -> purchaseService.purchase(
-                new CreatePurchaseRequest("card_missing", new BigDecimal("10.00")),
+                new CreatePurchaseRequest("card_missing", new BigDecimal("10.00"), null, null),
                 null
         ))
                 .isInstanceOf(ApiException.class)
@@ -106,7 +142,7 @@ class PurchaseServiceTest {
     @Test
     void insufficientAvailableIsUnprocessable() {
         assertThatThrownBy(() -> purchaseService.purchase(
-                new CreatePurchaseRequest("card_ada_orquidea", new BigDecimal("1000.01")),
+                new CreatePurchaseRequest("card_ada_orquidea", new BigDecimal("1000.01"), null, null),
                 null
         ))
                 .isInstanceOf(ApiException.class)
@@ -117,7 +153,7 @@ class PurchaseServiceTest {
 
     @Test
     void idempotencyKeyReplaysOriginalTrail() {
-        CreatePurchaseRequest request = new CreatePurchaseRequest("card_ada_orquidea", new BigDecimal("45.00"));
+        CreatePurchaseRequest request = new CreatePurchaseRequest("card_ada_orquidea", new BigDecimal("45.00"), null, null);
         PurchaseTrailResponse first = purchaseService.purchase(request, "coffee-replay");
         PurchaseTrailResponse second = purchaseService.purchase(request, "coffee-replay");
 
@@ -130,7 +166,7 @@ class PurchaseServiceTest {
     @Test
     void getPurchaseReturnsDetail() {
         PurchaseTrailResponse trail = purchaseService.purchase(
-                new CreatePurchaseRequest("card_ada_orquidea", new BigDecimal("45.00")),
+                new CreatePurchaseRequest("card_ada_orquidea", new BigDecimal("45.00"), null, null),
                 "coffee-detail"
         );
         var detail = purchaseService.getPurchase(trail.purchaseId());

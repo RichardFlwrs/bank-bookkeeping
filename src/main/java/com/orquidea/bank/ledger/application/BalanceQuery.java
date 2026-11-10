@@ -57,7 +57,7 @@ public class BalanceQuery {
     }
 
     private AccountDetailResponse toDetail(Account account) {
-        List<JournalLineResponse> lines = journalEntries.findAll(Sort.by("id")).stream()
+        List<JournalLineResponse> lines = journalEntries.findAll(Sort.by(Sort.Direction.DESC, "id")).stream()
                 .flatMap(entry -> entry.getLines().stream()
                         .filter(line -> line.getAccount().getId().equals(account.getId()))
                         .map(line -> toLine(entry, line)))

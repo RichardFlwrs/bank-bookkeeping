@@ -44,6 +44,12 @@ public class Purchase {
     @Column(nullable = false, columnDefinition = "TEXT")
     private BigDecimal amount;
 
+    @Column(length = 160)
+    private String label;
+
+    @Column(name = "merchant_id")
+    private Integer merchantId;
+
     @OneToOne(mappedBy = "purchase", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private AuthorizationHold hold;
 
@@ -102,6 +108,24 @@ public class Purchase {
 
     public Purchase setAmount(BigDecimal amount) {
         this.amount = amount;
+        return this;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public Purchase setLabel(String label) {
+        this.label = label;
+        return this;
+    }
+
+    public Integer getMerchantId() {
+        return merchantId;
+    }
+
+    public Purchase setMerchantId(Integer merchantId) {
+        this.merchantId = merchantId;
         return this;
     }
 

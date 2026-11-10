@@ -124,6 +124,22 @@ class BalanceQueryTest {
     }
 
     @Test
+    void accountLinesPutOlderRecordsLast() {
+        Account ada = accounts.findByCode("2100").orElseThrow();
+        Account cash = accounts.findByCode("1000").orElseThrow();
+        JournalEntry later = new JournalEntry().setPostedAt(Instant.parse("2026-03-01T00:00:00Z"));
+        later.addLine(new JournalLine().setAccount(ada).setSide(EntrySide.DEBIT).setAmount(new BigDecimal("5.00")));
+        later.addLine(new JournalLine().setAccount(cash).setSide(EntrySide.CREDIT).setAmount(new BigDecimal("5.00")));
+        JournalEntry saved = ledgerService.postBalancedEntry(later);
+
+        AccountDetailResponse detail = balanceQuery.getAccount("2100");
+        assertThat(detail.lines()).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(detail.lines().get(0).journalEntryId()).isEqualTo(saved.getId());
+        assertThat(detail.lines().get(0).journalEntryId())
+                .isGreaterThan(detail.lines().get(detail.lines().size() - 1).journalEntryId());
+    }
+
+    @Test
     void getAccountUnknownCodeNotFound() {
         assertThatThrownBy(() -> balanceQuery.getAccount("9999"))
                 .isInstanceOf(ApiException.class)

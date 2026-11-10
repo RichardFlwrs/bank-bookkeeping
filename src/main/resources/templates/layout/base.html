@@ -14,6 +14,7 @@
     <nav class="site-nav" aria-label="Primary">
         <a th:href="@{/ledger/accounts}">All accounts</a>
         <a th:href="@{/ledger/me}">My ledger</a>
+        <a sec:authorize="isAuthenticated()" th:href="@{/ledger/pay}">Pay</a>
         <span class="spacer"></span>
         <a sec:authorize="!isAuthenticated()" th:href="@{/login}">Login</a>
         <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">

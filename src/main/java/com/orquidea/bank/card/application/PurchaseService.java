@@ -24,6 +24,8 @@ import com.orquidea.bank.ledger.domain.EntrySide;
 import com.orquidea.bank.ledger.domain.JournalEntry;
 import com.orquidea.bank.ledger.domain.JournalLine;
 import com.orquidea.bank.ledger.infrastructure.AccountRepository;
+import com.orquidea.bank.merchant.domain.Merchant;
+import com.orquidea.bank.merchant.infrastructure.MerchantRepository;
 import com.orquidea.bank.settlement.application.SettlementService;
 import com.orquidea.bank.settlement.domain.ClearingItem;
 import com.orquidea.bank.settlement.domain.Settlement;
@@ -52,6 +54,7 @@ public class PurchaseService {
     private final PurchaseRepository purchases;
     private final CustomerRepository customers;
     private final AccountRepository accounts;
+    private final MerchantRepository merchants;
     private final ClearingItemRepository clearingItems;
     private final SettlementRepository settlements;
     private final LedgerService ledgerService;
@@ -66,6 +69,7 @@ public class PurchaseService {
             PurchaseRepository purchases,
             CustomerRepository customers,
             AccountRepository accounts,
+            MerchantRepository merchants,
             ClearingItemRepository clearingItems,
             SettlementRepository settlements,
             LedgerService ledgerService,
@@ -79,6 +83,7 @@ public class PurchaseService {
         this.purchases = purchases;
         this.customers = customers;
         this.accounts = accounts;
+        this.merchants = merchants;
         this.clearingItems = clearingItems;
         this.settlements = settlements;
         this.ledgerService = ledgerService;
@@ -98,6 +103,7 @@ public class PurchaseService {
 
         Card card = cards.findByToken(request.cardToken())
                 .orElseThrow(() -> ApiException.notFound("card_not_found"));
+        Merchant merchant = resolveMerchant(request.merchantId());
         Account deposit = depositAccountFor(card);
         BigDecimal amount = request.amount().setScale(2, RoundingMode.HALF_UP);
         if (balances.available(deposit).compareTo(amount) < 0) {
@@ -107,7 +113,13 @@ public class PurchaseService {
         BigDecimal fee = PurchaseFee.forAmount(amount);
         List<PurchaseStepResponse> steps = new ArrayList<>();
 
-        Purchase purchase = self.authorize(card, amount, idempotencyKey);
+        Purchase purchase = self.authorize(
+                card,
+                amount,
+                idempotencyKey,
+                blankToNull(request.label()),
+                merchant.getId()
+        );
         steps.add(step("authorize", purchase, deposit));
 
         settlementService.clear(purchase);
@@ -163,19 +175,37 @@ public class PurchaseService {
     }
 
     @Transactional
-    public Purchase authorize(Card card, BigDecimal amount, String idempotencyKey) {
+    public Purchase authorize(
+            Card card,
+            BigDecimal amount,
+            String idempotencyKey,
+            String label,
+            Integer merchantId
+    ) {
         Purchase purchase = new Purchase()
                 .setPublicId(newId("pur"))
                 .setTraceId(newId("trc"))
                 .setIdempotencyKey(blankToNull(idempotencyKey))
                 .setCard(card)
                 .setStatus(PurchaseStatus.REQUESTED)
-                .setAmount(amount);
+                .setAmount(amount)
+                .setLabel(label)
+                .setMerchantId(merchantId);
         purchase.setHold(new AuthorizationHold()
                 .setAmount(amount)
                 .setStatus(HoldStatus.OPEN));
         purchase.setStatus(PurchaseStatus.AUTHORIZED);
         Purchase saved = purchases.save(purchase);
+
+        Map<String, Object> purchaseAfter = new LinkedHashMap<>();
+        purchaseAfter.put("publicId", saved.getPublicId());
+        purchaseAfter.put("status", saved.getStatus().name());
+        purchaseAfter.put("amount", money(saved.getAmount()));
+        purchaseAfter.put("holdId", saved.getHold().getId());
+        purchaseAfter.put("merchantId", saved.getMerchantId());
+        if (saved.getLabel() != null) {
+            purchaseAfter.put("label", saved.getLabel());
+        }
 
         auditRecorder.record(
                 "purchase",
@@ -185,12 +215,7 @@ public class PurchaseService {
                 saved.getPublicId(),
                 saved.getTraceId(),
                 null,
-                json(Map.of(
-                        "publicId", saved.getPublicId(),
-                        "status", saved.getStatus().name(),
-                        "amount", money(saved.getAmount()),
-                        "holdId", saved.getHold().getId()
-                ))
+                json(purchaseAfter)
         );
         auditRecorder.record(
                 "purchase",
@@ -292,6 +317,17 @@ public class PurchaseService {
                 balances.format(balances.available(deposit)),
                 balances.format(balances.posted(deposit))
         );
+    }
+
+    private Merchant resolveMerchant(Integer merchantId) {
+        if (merchantId != null) {
+            return merchants.findById(merchantId)
+                    .orElseThrow(() -> ApiException.notFound("merchant_not_found"));
+        }
+        Account cafe = accounts.findByCode(ChartOfAccountsSeeder.CAFE_DEPOSIT_CODE)
+                .orElseThrow(() -> ApiException.notFound("account_not_found"));
+        return merchants.findByDepositAccountId(cafe.getId())
+                .orElseThrow(() -> ApiException.notFound("merchant_not_found"));
     }
 
     private Account depositAccountFor(Card card) {

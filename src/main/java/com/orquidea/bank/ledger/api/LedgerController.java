@@ -40,7 +40,7 @@ public class LedgerController {
      * open holds only affect available. Future: surface pending/authorized activity alongside lines.
      */
     @GetMapping("/api/ledger/accounts/{code}")
-    @Operation(summary = "One account plus its journal lines")
+    @Operation(summary = "One account plus its journal lines, newest first")
     public AccountDetailResponse account(
             @Parameter(example = "2100", description = "Account code")
             @PathVariable String code

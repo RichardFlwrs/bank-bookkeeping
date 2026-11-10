@@ -12,7 +12,9 @@
     <p class="lead">
         Signed in as <span class="mono" th:text="${cardholderName}">ada</span>.
         Deposit account from your session.
+        <a th:href="@{/ledger/pay}">Make a payment</a>.
     </p>
+    <p class="flash flash-ok" th:if="${flashOk != null}" th:text="${flashOk}">Paid.</p>
     <dl class="summary" th:if="${account != null}">
         <div>
             <dt>Code</dt>

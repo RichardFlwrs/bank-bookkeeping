@@ -158,3 +158,76 @@ th {
 .summary dd {
     margin: 0.2rem 0 0;
 }
+
+.pay-hero {
+    text-align: center;
+    margin: 0 0 2rem;
+}
+
+.pay-hero-label {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.pay-balance {
+    margin: 0.35rem 0 0;
+    font-size: clamp(2.5rem, 8vw, 4.5rem);
+    font-weight: 600;
+    line-height: 1.05;
+}
+
+.pay-form {
+    max-width: 28rem;
+    margin: 0 auto;
+    display: grid;
+    gap: 1.1rem;
+}
+
+.pay-field label {
+    display: block;
+    margin-bottom: 0.35rem;
+}
+
+.pay-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.pay-form input,
+.pay-form select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.55rem 0.65rem;
+    border: 1px solid var(--line);
+    border-radius: 0.35rem;
+    font: inherit;
+    background: #fff;
+}
+
+.dice {
+    padding: 0.55rem 0.75rem;
+    border: 1px solid var(--line);
+    border-radius: 0.35rem;
+    background: var(--head);
+    font: inherit;
+    cursor: pointer;
+}
+
+.dice:hover {
+    border-color: var(--ink);
+}
+
+.pay-submit {
+    padding: 0.7rem 0.9rem;
+    border: 1px solid var(--ink);
+    border-radius: 0.35rem;
+    background: var(--ink);
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+}
