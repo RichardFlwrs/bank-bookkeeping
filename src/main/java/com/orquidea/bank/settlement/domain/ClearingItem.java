@@ -23,7 +23,7 @@ public class ClearingItem {
     @Column(name = "authorization_hold_id", nullable = false, unique = true)
     private Integer authorizationHoldId;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
     public Integer getId() {

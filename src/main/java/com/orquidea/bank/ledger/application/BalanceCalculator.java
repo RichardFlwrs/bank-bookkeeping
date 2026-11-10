@@ -28,8 +28,8 @@ public class BalanceCalculator {
         BigDecimal raw = jdbc.queryForObject(
                 """
                         SELECT COALESCE(SUM(CASE
-                            WHEN side = 'DEBIT' THEN %sCAST(amount AS REAL)
-                            WHEN side = 'CREDIT' THEN %sCAST(amount AS REAL)
+                            WHEN side = 'DEBIT' THEN %samount
+                            WHEN side = 'CREDIT' THEN %samount
                             ELSE 0
                         END), 0)
                         FROM journal_line
@@ -47,7 +47,7 @@ public class BalanceCalculator {
         }
         BigDecimal raw = jdbc.queryForObject(
                 """
-                        SELECT COALESCE(SUM(CAST(h.amount AS REAL)), 0)
+                        SELECT COALESCE(SUM(h.amount), 0)
                         FROM authorization_hold h
                         JOIN purchase p ON p.id = h.purchase_id
                         JOIN card c ON c.id = p.card_id

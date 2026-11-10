@@ -10,6 +10,22 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_ROOT_PASSWORD: bank
+          MYSQL_DATABASE: bank_test
+          MYSQL_USER: bank
+          MYSQL_PASSWORD: bank
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pbank --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+          --health-start-period=30s
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -22,4 +38,8 @@ jobs:
           cache: maven
 
       - name: Run tests
+        env:
+          SPRING_DATASOURCE_URL: jdbc:mysql://127.0.0.1:3306/bank_test?sslMode=DISABLED&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+          SPRING_DATASOURCE_USERNAME: bank
+          SPRING_DATASOURCE_PASSWORD: bank
         run: ./mvnw -B test

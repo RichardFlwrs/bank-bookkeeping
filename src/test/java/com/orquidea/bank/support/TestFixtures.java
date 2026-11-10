@@ -13,6 +13,9 @@ import com.orquidea.bank.settlement.infrastructure.SettlementRepository;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.sql.Connection;
+import java.sql.Statement;
+
 @Component
 public class TestFixtures {
 
@@ -55,19 +58,24 @@ public class TestFixtures {
     }
 
     public void clearDatabase() {
-        jdbc.execute("PRAGMA foreign_keys = OFF");
-        jdbc.update("DELETE FROM audit_event");
-        jdbc.update("DELETE FROM settlement");
-        jdbc.update("DELETE FROM clearing_item");
-        jdbc.update("DELETE FROM authorization_hold");
-        jdbc.update("DELETE FROM purchase");
-        jdbc.update("DELETE FROM card");
-        jdbc.update("DELETE FROM customer");
-        jdbc.update("DELETE FROM merchant");
-        jdbc.update("DELETE FROM journal_line");
-        jdbc.update("DELETE FROM journal_entry");
-        jdbc.update("DELETE FROM account");
-        jdbc.execute("PRAGMA foreign_keys = ON");
+        jdbc.execute((Connection connection) -> {
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("SET FOREIGN_KEY_CHECKS = 0");
+                statement.execute("DELETE FROM audit_event");
+                statement.execute("DELETE FROM settlement");
+                statement.execute("DELETE FROM clearing_item");
+                statement.execute("DELETE FROM authorization_hold");
+                statement.execute("DELETE FROM purchase");
+                statement.execute("DELETE FROM card");
+                statement.execute("DELETE FROM customer");
+                statement.execute("DELETE FROM merchant");
+                statement.execute("DELETE FROM journal_line");
+                statement.execute("DELETE FROM journal_entry");
+                statement.execute("DELETE FROM account");
+                statement.execute("SET FOREIGN_KEY_CHECKS = 1");
+            }
+            return null;
+        });
         auditEvents.flush();
         settlements.flush();
         clearingItems.flush();

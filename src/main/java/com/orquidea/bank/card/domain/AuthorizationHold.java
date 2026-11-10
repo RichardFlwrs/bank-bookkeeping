@@ -27,14 +27,14 @@ public class AuthorizationHold {
     @JoinColumn(name = "purchase_id", nullable = false, unique = true)
     private Purchase purchase;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private HoldStatus status;
 
-    @Column(name = "released_at", columnDefinition = "TEXT")
+    @Column(name = "released_at")
     private Instant releasedAt;
 
     public Integer getId() {

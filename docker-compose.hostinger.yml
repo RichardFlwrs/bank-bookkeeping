@@ -1,0 +1,11 @@
+# App only. Datasource comes from the VPS .env (Hostinger MySQL).
+# The local mysql service in docker-compose.yml is not started.
+services:
+  api:
+    build: .
+    ports:
+      - "8086:8086"
+    env_file:
+      - .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

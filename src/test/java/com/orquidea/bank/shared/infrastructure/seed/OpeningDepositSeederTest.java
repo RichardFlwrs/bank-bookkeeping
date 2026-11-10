@@ -82,8 +82,8 @@ class OpeningDepositSeederTest {
         return jdbc.queryForObject(
                 """
                         SELECT COALESCE(SUM(CASE
-                            WHEN side = 'DEBIT' THEN %sCAST(amount AS REAL)
-                            WHEN side = 'CREDIT' THEN %sCAST(amount AS REAL)
+                            WHEN side = 'DEBIT' THEN %samount
+                            WHEN side = 'CREDIT' THEN %samount
                             ELSE 0
                         END), 0)
                         FROM journal_line

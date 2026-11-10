@@ -2,15 +2,16 @@ spring:
   application:
     name: bank
   datasource:
-    url: jdbc:sqlite:./var/bank_dev.db
-    driver-class-name: org.sqlite.JDBC
+    url: jdbc:mysql://localhost:3307/bank?sslMode=DISABLED&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: bank
+    password: bank
+    driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.community.dialect.SQLiteDialect
         jdbc:
           time_zone: UTC
   flyway:
@@ -46,8 +47,9 @@ spring:
     activate:
       on-profile: test
   datasource:
-    url: jdbc:sqlite:./var/bank_test.db
-    driver-class-name: org.sqlite.JDBC
+    url: jdbc:mysql://localhost:3307/bank_test?sslMode=DISABLED&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8
+    username: bank
+    password: bank
   jpa:
     hibernate:
       ddl-auto: validate

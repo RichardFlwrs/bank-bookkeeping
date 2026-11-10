@@ -19,32 +19,32 @@ public class AuditEvent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "occurred_at", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "occurred_at", nullable = false)
     private Instant occurredAt;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 64)
     private String actor = "";
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 40)
     private AuditAction action;
 
-    @Column(name = "aggregate_type", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "aggregate_type", nullable = false, length = 64)
     private String aggregateType = "";
 
-    @Column(name = "aggregate_id", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "aggregate_id", nullable = false, length = 64)
     private String aggregateId = "";
 
-    @Column(name = "purchase_id", columnDefinition = "TEXT")
+    @Column(name = "purchase_id", length = 64)
     private String purchaseId;
 
-    @Column(name = "trace_id", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "trace_id", nullable = false, length = 64)
     private String traceId = "";
 
-    @Column(name = "before_json", columnDefinition = "TEXT")
+    @Column(name = "before_json", length = 4000)
     private String beforeJson;
 
-    @Column(name = "after_json", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "after_json", nullable = false, length = 4000)
     private String afterJson = "";
 
     public Integer getId() {

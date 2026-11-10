@@ -34,7 +34,7 @@ public class JournalLine {
     @Column(nullable = false, length = 10)
     private EntrySide side;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
     public Integer getId() {

@@ -5,6 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 HOST="${VPS_HOST:-82.180.160.106}"
 USER="${VPS_USER:-root}"
 APP_DIR="${VPS_APP_DIR:-/opt/bank-bookkeeping}"
+COMPOSE_FILE="${VPS_COMPOSE_FILE:-docker-compose.yml}"
 SSH_KEY="${VPS_SSH_KEY_FILE:-$HOME/.ssh/id_ed25519}"
 
 if [[ ! -f "$SSH_KEY" ]]; then
@@ -21,13 +22,14 @@ rsync -az --delete \
   --exclude '.git/' \
   --exclude 'target/' \
   --exclude 'var/' \
+  --exclude '.env' \
   --exclude '_temp/' \
   --exclude '.vscode/' \
   --exclude '.DS_Store' \
   "$ROOT/" "${USER}@${HOST}:${APP_DIR}/"
 
 "${SSH[@]}" "${USER}@${HOST}" \
-  "cd '${APP_DIR}' && mkdir -p var && chown -R 10001:10001 var && docker compose up --build -d"
+  "cd '${APP_DIR}' && docker compose -f '${COMPOSE_FILE}' up --build -d"
 
 echo "Waiting for /login (seed can take a minute)…"
 "${SSH[@]}" "${USER}@${HOST}" bash -s <<EOF
@@ -43,8 +45,8 @@ for i in \$(seq 1 90); do
 done
 echo "Timed out waiting for /login"
 cd '${APP_DIR}'
-docker compose ps || true
-docker compose logs --tail 80 api || true
+docker compose -f '${COMPOSE_FILE}' ps || true
+docker compose -f '${COMPOSE_FILE}' logs --tail 80 api || true
 exit 1
 EOF
 

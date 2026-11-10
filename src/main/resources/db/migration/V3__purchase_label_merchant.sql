@@ -1,2 +1,2 @@
-ALTER TABLE purchase ADD COLUMN label VARCHAR(160);
-ALTER TABLE purchase ADD COLUMN merchant_id INTEGER;
+ALTER TABLE purchase ADD COLUMN label VARCHAR(160) NULL;
+ALTER TABLE purchase ADD COLUMN merchant_id INT NULL;

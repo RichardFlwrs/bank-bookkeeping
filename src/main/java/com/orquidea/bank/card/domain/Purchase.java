@@ -41,7 +41,7 @@ public class Purchase {
     @Column(nullable = false, length = 20)
     private PurchaseStatus status;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
     @Column(length = 160)

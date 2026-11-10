@@ -8,11 +8,8 @@ RUN ./mvnw -B -DskipTests package
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
-RUN useradd --system --uid 10001 app \
-    && mkdir -p /data \
-    && chown app:app /data
+RUN useradd --system --uid 10001 app
 COPY --from=build /src/target/bank-0.0.1-SNAPSHOT.jar app.jar
 USER app
 EXPOSE 8086
-ENV SPRING_DATASOURCE_URL=jdbc:sqlite:/data/bank_dev.db
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

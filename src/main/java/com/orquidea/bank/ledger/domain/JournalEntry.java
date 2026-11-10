@@ -22,7 +22,7 @@ public class JournalEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column(name = "posted_at", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "posted_at", nullable = false)
     private Instant postedAt;
 
     @OneToMany(mappedBy = "journalEntry", cascade = CascadeType.ALL, orphanRemoval = true)

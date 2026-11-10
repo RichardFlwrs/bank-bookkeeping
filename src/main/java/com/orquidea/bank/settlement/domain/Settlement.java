@@ -20,10 +20,10 @@ public class Settlement {
     @Column(name = "purchase_id", nullable = false, unique = true)
     private Integer purchaseId;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
-    @Column(name = "fee_amount", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "fee_amount", nullable = false, precision = 19, scale = 2)
     private BigDecimal feeAmount;
 
     public Integer getId() {
