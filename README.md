@@ -292,7 +292,7 @@ Today `POST /api/purchases` runs the whole walk in one request. Real payments of
 GitHub Actions:
 
 - [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — runs `./mvnw -B test` on pushes and pull requests to `master` / `main`.
-- [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) — after tests on `master` / `main`, rsyncs to the Hostinger VPS, runs `docker compose up --build -d`, then waits for `/login` (startup/seed can take a minute). That compose file starts MySQL in Docker on the VPS. To use a Hostinger database instead, follow [Hostinger MySQL](#hostinger-mysql).
+- [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) — after tests on `master` / `main`, rsyncs to the Hostinger VPS and runs `docker compose up --build -d`. A separate **Wait for /login** job then polls `/login` (startup/seed can take a minute). If that job fails and deploy succeeded, **Re-run failed jobs** retries only the login check. That compose file starts MySQL in Docker on the VPS. To use a Hostinger database instead, follow [Hostinger MySQL](#hostinger-mysql).
 
 Add these repository secrets (Settings → Secrets and variables → Actions):
 
