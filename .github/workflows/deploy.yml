@@ -132,16 +132,27 @@ jobs:
           COMPOSE_FILE="${VPS_COMPOSE_FILE:-docker-compose.yml}"
           ssh "${VPS_USER}@${VPS_HOST}" bash -s <<EOF
           set -euo pipefail
-          for i in \$(seq 1 90); do
-            code=\$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:8086/login 2>/dev/null || echo 000)
+          last_err=
+          for i in \$(seq 1 7); do
+            err_file=\$(mktemp)
+            code=\$(curl -sS -o /dev/null -w '%{http_code}' --connect-timeout 5 --max-time 10 http://127.0.0.1:8086/login 2>"\$err_file" || true)
+            code=\${code:-000}
             echo "try \$i login=\$code"
             if [ "\$code" = "200" ] || [ "\$code" = "302" ]; then
+              rm -f "\$err_file"
               echo "App is up"
               exit 0
             fi
-            sleep 2
+            last_err=\$(cat "\$err_file")
+            rm -f "\$err_file"
+            if [ "\$i" -lt 7 ]; then
+              sleep 2
+            fi
           done
-          echo "Timed out waiting for /login"
+          echo "Failed waiting for /login"
+          if [ -n "\$last_err" ]; then
+            printf '%s\n' "\$last_err"
+          fi
           cd '${APP_DIR}'
           docker compose -f '${COMPOSE_FILE}' ps || true
           docker compose -f '${COMPOSE_FILE}' logs --tail 80 api || true
