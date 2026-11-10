@@ -292,7 +292,7 @@ Today `POST /api/purchases` runs the whole walk in one request. Real payments of
 GitHub Actions:
 
 - [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — runs `./mvnw -B test` on pushes and pull requests to `master` / `main`.
-- [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) — after tests on `master` / `main`, rsyncs to the Hostinger VPS and runs `docker compose up --build -d`.
+- [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) — after tests on `master` / `main`, rsyncs to the Hostinger VPS, runs `docker compose up --build -d`, then waits for `/login` (startup/seed can take a minute).
 
 Add these repository secrets (Settings → Secrets and variables → Actions):
 
