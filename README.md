@@ -287,6 +287,32 @@ Today `POST /api/purchases` runs the whole walk in one request. Real payments of
 | `GET /ledger/me` | Cardholder posted, available, and posted journal lines, newest first. | Open holds and mid-walk purchases on the page (available &lt; posted, or pending items that are not lines yet). |
 | `GET` / `POST` `/ledger/pay` | Session pay form that runs the full walk with a chosen merchant and label. | Split the walk so the page can authorize now and capture later. |
 
+## CI / CD
+
+GitHub Actions:
+
+- [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — runs `./mvnw -B test` on pushes and pull requests to `master` / `main`.
+- [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) — after tests on `master` / `main`, rsyncs to the Hostinger VPS and runs `docker compose up --build -d`.
+
+Add these repository secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Example | Notes |
+|--------|---------|--------|
+| `VPS_HOST` | `82.180.160.106` | VPS public IP or hostname |
+| `VPS_USER` | `root` | SSH user |
+| `VPS_SSH_KEY` | *(private key PEM)* | Full private key whose public key is in the VPS `~/.ssh/authorized_keys` |
+| `VPS_APP_DIR` | `/opt/bank-bookkeeping` | Optional. Defaults to `/opt/bank-bookkeeping` |
+
+The VPS `var/` directory is not overwritten, so SQLite survives deploys.
+
+Manual deploy from a laptop (same layout as Actions):
+
+```bash
+./scripts/deploy-vps.sh
+```
+
+Or VS Code task **vps: deploy**.
+
 ## Run
 
 ```bash
